@@ -4,7 +4,8 @@ from colicoords.synthetic_data import draw_poisson, add_readout_noise
 import matplotlib.pyplot as plt
 import numpy as np
 import mahotas as mh
-
+from tqdm import tqdm
+import time
 
 def gen_synthcells(num):
     """Generates a list of synthetic cells"""
@@ -23,36 +24,52 @@ def gen_synthcells(num):
     psf = PSF(sigma=1.54)
     rm = RDistModel(psf, r='equal', mem=Memory(verbose=0))
 
-    cell_list = SynthCellList(lengths, radii, curvatures)
-    bf_rdist = np.loadtxt('brightfield_r_dist.txt')
-    x_out, y_out = bf_rdist.T
-    y_out[122:] = y_out[121]
-    y_out -= y_out[121]
-    y_out /= y_out.max()
+    cell_list = SynthCellList(lengths, radii, curvatures, pad_width=20)
+#    bf_rdist = np.loadtxt('brightfield_r_dist.txt')
+    x_out = np.genfromtxt('r_dist_cells_xvals_final.txt')
+    # y_out[122:] = y_out[121]
+    # y_out -= y_out[121]
+    # y_out /= y_out.max()
 
-    for cell in cell_list:
+    for cell, y_out in tqdm(zip(cell_list, yield_bf()), total=len(cell_list)):
         st_int = st_ints.pop()
 
         inner_radius = cell.coords.r / (r_factor * inner_membrane_factor)
-        storm_table = cell.gen_storm_membrane(int(st_num.pop()), inner_radius, r_std=0.25, intensity_mean=st_int,
-                                              intensity_std=5 * np.sqrt(st_int))
+        try:
+            storm_table = cell.gen_storm_membrane(int(st_num.pop()), inner_radius, r_std=0.25, intensity_mean=st_int,
+                                                  intensity_std=5 * np.sqrt(st_int))
+        except ValueError:
+            continue
+
         cell.data.add_data(storm_table, 'storm', 'storm_inner')
         storm_img = cell.gen_flu_from_storm('storm_inner', sigma_std=0.3)
         cell.data.add_data(storm_img, 'fluorescence', 'foci_inner')
 
-
-        storm_table = cell.gen_storm_membrane(int(st_num.pop()), inner_radius + 100 / 80, r_std=0.25, intensity_mean=st_int,
-                                              intensity_std=5 * np.sqrt(st_int))
+        try:
+            storm_table = cell.gen_storm_membrane(int(st_num.pop()), inner_radius + 100 / 80, r_std=0.25, intensity_mean=st_int,
+                                                  intensity_std=5 * np.sqrt(st_int))
+        except ValueError:
+            continue
 
         cell.data.add_data(storm_table, 'storm', 'storm_outer')
         storm_img = cell.gen_flu_from_storm('storm_outer', sigma_std=0.3)
         cell.data.add_data(storm_img, 'fluorescence', 'foci_outer')
 
-        r_scf = cell.coords.r / (r_factor * bf_r)  # Scaling factor equal to one when cell radius equal to standard brightfield
+        r_scf = cell.coords.r / r_factor  # Scaling factor equal to one when cell radius equal to standard brightfield
         bf_img = np.interp(cell.coords.rc, r_scf*x_out, y_out)
         cell.data.add_data(bf_img, 'brightfield')
 
     return cell_list
+
+
+def yield_bf():
+    y_arr = np.loadtxt('r_dist_cells_yvals_final.txt')
+
+    while True:
+        idx = np.arange(len(y_arr))
+        np.random.shuffle(idx)
+        for i in idx:
+            yield y_arr[i]
 
 
 def measure_r(file_path):
@@ -97,39 +114,44 @@ def test_bf():
     axes[1].imshow(bf_img)
     plt.show()
 
+
 if __name__ == '__main__':
+
     #test_bf()
-    cell_list = gen_synthcells(100)
-    save('temp_cells.hdf5', cell_list)
-    #cell_list = load('temp_cells.hdf5')
+    #cell_list = gen_synthcells(25000)
+    #save('cells_final.hdf5', cell_list)
+    cell_list = load('cells_final_selected.hdf5')
+    # print(cell_list[0].data.names)
+    # b = np.array([len(cell.data.names) == 6 for cell in cell_list])
+    # print(np.sum(b))
     #
-    # print(len(cell_list[0].data.data_dict['storm_inner']))
-    #
-    # # fig, axes = plt.subplots(2,2)
-    # # axes[0, 0].imshow(cell_list[0].data.data_dict['brightfield'])
-    # # axes[1, 0].imshow(cell_list[0].data.data_dict['fluorescence'])
-    # # axes[0, 1].imshow(cell_list[0].data.data_dict['foci'])
-    # # axes[1, 1].imshow(cell_list[0].data.data_dict['cytosol'])
-    # # plt.show()
-    #
-    # # r = [6.26910029, 6.27242372, 6.26352644, 6.26879522, 6.26969121, 6.27190085,
-    # #      6.27136557, 6.27545835, 6.27717932, 6.27037941, 6.27157568, 6.25858736,
-    # #      6.27829562, 6.26851525, 6.28920958, 6.26435895, 6.27367268, 6.28106801,
-    # #      6.2729644,  6.28511554]
-    # # print('r ', np.mean(r))
-    #
-    # # rs = cell_list.measure_r('brightfield', mode='mid', in_place=False)
-    # # print(rs)
+    # save('cells_final_selected.hdf5', cell_list[b])
+
+
+
+
     #
     # olay = mh.overlay(cell_list[0].data.data_dict['brightfield'], red = cell_list[0].data.data_dict['binary'])
     # plt.imshow(olay)
     # plt.show()
-    # #
-    # # cp = CellPlot(cell_list[0])
-    # # cp.imshow('binary', cmap='OrRd')
-    # # cp.imshow('brightfield', alpha=0.9, cmap='gray')
-    # # cp.plot_outline()
+
+    fig, axes = plt.subplots(1, 3)
+    cp = CellPlot(cell_list[3])
+    cp.imshow('binary', ax=axes[0])
+    cp.imshow('brightfield', ax=axes[1], alpha=0.9, cmap='gray')
+    cp.plot_storm(ax=axes[2], method='gauss')
+    cp.plot_outline()
+    plt.show()
     #
+
+
+    fig, axes = plt.subplots(1, 3)
+    cp = CellPlot(cell_list[3000])
+    cp.imshow('binary', ax=axes[0])
+    cp.imshow('brightfield', ax=axes[1], alpha=0.9, cmap='gray')
+    cp.plot_storm(ax=axes[2], method='gauss')
+    cp.plot_outline()
+    plt.show()
     # cell_list[0].measure_r('brightfield', mode='mid')
     # print(cell_list[0].radius)
     # cp = CellPlot(cell_list[0])

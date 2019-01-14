@@ -6,6 +6,8 @@ import numpy as np
 import mahotas as mh
 from scipy.stats import moment
 import matplotlib.pyplot as plt
+from tqdm import tqdm
+import tifffile
 
 def chunk_list(l, sizes):
     prev = 0
@@ -17,10 +19,11 @@ def chunk_list(l, sizes):
 
 def generate_images(cell_list, num_images, cell_per_img, cell_per_img_std, shape):
     nums = np.round(np.random.normal(cell_per_img, cell_per_img_std, num_images)).astype(int)
+    nums = nums[nums > 0]
+
     assert sum(nums) < len(cell_list), 'Not enough cells'
-    chunked = [chunk for chunk in chunk_list(cell_list, nums)]
-    print(len(chunked), 'len')
-    dicts = [generate_image(cells, shape) for cells in chunked]
+    chunked = [chunk for chunk in tqdm(chunk_list(cell_list, nums))]
+    dicts = [generate_image(cells, shape) for cells in tqdm(chunked)]
     out_dict = {}
     for i, d in enumerate(dicts):
         for k, v in d.items():
@@ -45,9 +48,7 @@ def generate_image(cells, shape, max_dist=5):
     thetas = 360 * np.random.rand(len(cells))
     data_list = [cell.data.rotate(theta) for cell, theta in zip(cells, thetas)]
     assert all([data.names == data_list[0].names for data in data_list]), 'All cells must have the same data elements'
-
     out_dict = {name: np.zeros(shape) for name, dclass in zip(data_list[0].names, data_list[0].dclasses) if dclass != 'storm'}
-
     for i, data in enumerate(data_list):
         valid_position = False
         while not valid_position:
@@ -104,7 +105,7 @@ def generate_image(cells, shape, max_dist=5):
 
                 xmax, ymax = shape[1], shape[0]
                 bools = (data_elem['x'] < 0) + (data_elem['x'] > xmax) + (data_elem['y'] < 0) + (data_elem['y'] > ymax)
-                data_out = data_elem[bools].copy()
+                data_out = data_elem[~bools].copy()
                 if name in out_dict:
                     out_dict[name] = np.append(out_dict[name], data_out)
                 else:
@@ -138,49 +139,117 @@ def gen_image_from_storm(storm_table, shape, sigma=1.54, sigma_std=0.3):
 
     return img
 
+
 def gen_im():
-    cell_list = load('temp_cells.hdf5')
+    cell_list = load('cells_final_selected.hdf5')
+    #cell_list = load('temp_cells.hdf5')
+    print('thisasdfaewrasdfas')
     # print(type(cell_list[0].data.data_dict['storm_inner']))
     # print(cell_list[0].data.data_dict['storm_inner']['frame'])
 
-    out_dict = generate_images(cell_list, 5, 10, 3, (512, 512))
-
+    out_dict = generate_images(cell_list, 1000, 10, 3, (512, 512))
+    print(list(out_dict.keys()))
+    print(len(out_dict['storm_inner']))
     np.save('binary.npy', out_dict['binary'])
     np.save('brightfield.npy', out_dict['brightfield'])
-    np.save('storm.npy', out_dict['storm_inner'])
-    cells = load('temp_cells.hdf5')
+    np.save('foci_inner.npy', out_dict['foci_inner'])
+    np.save('foci_outer.npy', out_dict['foci_outer'])
+    np.save('storm_inner.npy', out_dict['storm_inner'])
+    np.save('storm_outer.npy', out_dict['storm_outer'])
+
+    tifffile.imsave('binary.tif', out_dict['binary'], bigtiff=True)
+    tifffile.imsave('brightfield.tif', out_dict['brightfield'], bigtiff=True)
+    tifffile.imsave('foci_inner.tif', out_dict['foci_inner'])
+    tifffile.imsave('foci_outer.tif', out_dict['foci_outer'])
+    np.savetxt('storm_inner.txt', out_dict['storm_inner'])
+    np.savetxt('storm_outer.txt', out_dict['storm_inner'])
+
 
 def load_im():
-    return np.load('binary.npy'), np.load('brightfield.npy'), np.load('storm.npy')
+    return np.load('binary.npy'), np.load('brightfield.npy'), np.load('storm_inner.npy'), np.load('storm_outer.npy')
+
+
+def noise_bf(img_stack):
+    noise = 20
+    for photons in [200, 300, 500]:
+        ratio = 1.0453 # ratio between no cells and cell wall
+        img = (photons*(ratio-1))*img_stack + photons
+        img = draw_poisson(img)
+        img = add_readout_noise(img, noise)
+        tifffile.imsave('bf_noise_{}_photons.tif'.format(photons), img)
+        np.save('bf_noise_{}_photons.npy'.format(photons), img)
+
 
 if __name__ == '__main__':
+#    gen_im()
+    bf = np.load('bf_noise_500_photons.npy')
+    #noise_bf(bf)
+    plt.imshow(bf[0])
+    plt.show()
 
-    cell_list = load('temp_cells.hdf5')
-    binary, brightfield, storm = load_im()
 
-    img = brightfield[0]
-    print(img.min(), img.max())
+    #oise_bf(bf)
 
-    img = (33000 - 31032)*img + 31032
-    img = add_readout_noise(img, 20)
-    print(img.min(), img.max())
 
-    # plt.figure()
-    # plt.imshow(img)
+    #cell_list = load('temp_cells.hdf5')
+    # binary, brightfield, storm, storm2 = load_im()
+    # print(binary.shape)
+    # print(len(storm))
+    #
+    # plt.imshow(binary[0], cmap='gray')
+    # print(len(storm['x'][storm['frame'] == 1]))
+    # plt.plot(storm['x'][storm['frame'] == 1], storm['y'][storm['frame'] == 1])
     # plt.show()
+    #
+    # fig, axes = plt.subplots(3,3)
+    # for a, c in zip(axes.flatten(), brightfield):
+    #     a.imshow(c, cmap='gray')
+    #
+    # plt.tight_layout()
+    # plt.show()
+    #
+    # photons = 10000
+    # noise = 20
+    # ratio = 33000 / 31032  # ratio between no cells and cell wall
+    # img = brightfield[0]
+    # img = (photons*(ratio-1))*img + photons
+    # print(img.max())
+    # img = draw_poisson(img)
+    # img = add_readout_noise(img, noise)
+    #
+    # plt.imshow(img, cmap='gray')
+    # plt.show()
+    # print('moments', [moment(img, moment=n + 1, axis=None) for n in range(5)])
+    # print(np.mean(img))
+    # print(np.std(img))
+    #
 
-    img_ph = img / 0.3682782513636919
-    poisson = draw_poisson(img_ph)
 
+    # img = brightfield[0]
+    # print(img.min(), img.max())
+    #
+    # img = (33000 - 31032)*img + 31032
+    # img = add_readout_noise(img, 20)
+    # print(img.min(), img.max())
+    #
+    # # plt.figure()
+    # # plt.imshow(img)
+    # # plt.show()
+    #
+    # img_ph = img / 0.3682782513636919
+    # poisson = draw_poisson(img_ph)
+    #
     # plt.figure()
     # plt.imshow(poisson)
     # plt.show()
-
-    print('poisson moments', [moment(poisson * 0.3682782513636919, moment=n + 1, axis=None) for n in range(5)])
-
-    final = poisson * 0.3682782513636919
-    print(np.mean(final))
-    print(np.std(final))
+    #
+    # final = poisson * 0.3682782513636919
+    # final /= final.mean()
+    #
+    # print('poisson moments', [moment(final, moment=n + 1, axis=None) for n in range(5)])
+    #
+    # print(np.mean(final))
+    # print(np.std(final))
 
 # black: 30000
 # white: 33000
