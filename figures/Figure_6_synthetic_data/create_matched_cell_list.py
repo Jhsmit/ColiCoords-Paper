@@ -146,29 +146,29 @@ def gen_cells():
 
 
 def optimize_all():
+    # for ph in [500]:
+    #     print(f'Photons {ph}')
+    #
+    #     print('Measured cells loaded')
+    #
+    #     print('binary')
+    #     optimize_cells = m_cells.copy()
+    #     optimize_cells.optimize_mp()
+    #     save('cell_obj/m_cells_ph_{}_match_binary.hdf5'.format(ph), optimize_cells)
+    #
+    #     print('brightfield')
+    #     optimize_cells = m_cells.copy()
+    #     optimize_cells.optimize_mp('brightfield')
+    #     save('cell_obj/m_cells_ph_{}_match_brightfield.hdf5'.format(ph), optimize_cells)
+    #
+    #     print('storm inner')
+    #     optimize_cells = m_cells.copy()
+    #     optimize_cells.optimize_mp('storm_inner')
+    #     save('cell_obj/m_cells_ph_{}_match_storm_inner.hdf5'.format(ph), optimize_cells)
+
     for ph in [10000, 1000, 500]:
         print(f'Photons {ph}')
-
         m_cells = load('cell_obj/m_cells_ph_{}_match_raw.hdf5'.format(ph))
-        print('Measured cells loaded')
-
-        print('binary')
-        optimize_cells = m_cells.copy()
-        optimize_cells.optimize_mp()
-        save('cell_obj/m_cells_ph_{}_match_binary.hdf5'.format(ph), optimize_cells)
-
-        print('brightfield')
-        optimize_cells = m_cells.copy()
-        optimize_cells.optimize_mp('brightfield')
-        save('cell_obj/m_cells_ph_{}_match_brightfield.hdf5'.format(ph), optimize_cells)
-
-        print('storm inner')
-        optimize_cells = m_cells.copy()
-        optimize_cells.optimize_mp('storm_inner')
-        save('cell_obj/m_cells_ph_{}_match_storm_inner.hdf5'.format(ph), optimize_cells)
-
-    for ph in [10000, 1000, 500]:
-        print(f'Photons {ph}')
 
         print('brightfield DE')
         optimize_cells = m_cells.copy()
