@@ -1,8 +1,10 @@
 from colicoords import load, save
 from tqdm.auto import tqdm
+import numpy as np
+import fastcluster as fc
+from scipy.cluster.hierarchy import fcluster
 
-
-def filter_cells(m_names, gt_names, m_cells, gt_cells, cutoff=12.5):
+def filter_cells(m_names, gt_names, m_cells, gt_cells, max_d=3):
     """Corrects cells with too many STORM localizations and removes cells with too few"""
 
     m_remove = []
@@ -16,10 +18,17 @@ def filter_cells(m_names, gt_names, m_cells, gt_cells, cutoff=12.5):
 
         for elem_name in ['storm_inner', 'storm_outer']:
             if len(m_c.data.data_dict[elem_name]) > len(gt_c.data.data_dict[elem_name]):
-                r = m_c.coords.calc_rc(m_c.data.data_dict[elem_name]['x'], m_c.data.data_dict[elem_name]['y'])
-                b = r < cutoff
+                st_elem = m_c.data.data_dict[elem_name]
+                X = np.array([st_elem['x'], st_elem['y']]).T.copy()
+                linkage = fc.linkage(X)
+                clusters = fcluster(linkage, max_d, criterion='distance')
+                counts = np.bincount(clusters)
+                i_max = np.argmax(counts)
+
+                b = [clusters == i_max]
 
                 m_c.data.data_dict[elem_name] = m_c.data.data_dict[elem_name][b].copy()
+
                 try:
                     assert len(m_c.data.data_dict[elem_name]) == len(gt_c.data.data_dict[elem_name])
                 except AssertionError:
