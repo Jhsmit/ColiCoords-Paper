@@ -30,6 +30,7 @@ def match_cells(gt_cells, m_cells, storm_input, filtered_binaries, max_d=3):
     false_positive = 0
     bordering = 0
     too_far = 0
+    max_idx_gt = 0
 
     gt_matched, m_matched = [], []
     for i in tqdm(np.unique(storm_input['frame'])):  # Iteration starts at 1 (ImageJ indexing)
@@ -54,6 +55,9 @@ def match_cells(gt_cells, m_cells, storm_input, filtered_binaries, max_d=3):
 
             # Find the GT cell
             idx_gt = np.argwhere(code == encoded_gt)
+            if idx_gt > max_idx_gt:
+                max_idx_gt = idx_gt
+
             if len(idx_gt) == 0:
                 # print('Cluster not in cells, probably bordering cell')
                 bordering += 1
@@ -73,13 +77,14 @@ def match_cells(gt_cells, m_cells, storm_input, filtered_binaries, max_d=3):
                 matched += 1
                 m_cell = s_cells[idx_m]
 
-            gt_matched.append(gt_cell)
-            m_matched.append(m_cell)
+            gt_matched.append(gt_cell.name + '\n')
+            m_matched.append(m_cell.name + '\n')
 
         false_positive += (len(s_cells) - matched)
 
-    print('False pos', false_positive)
-    print(bordering, too_far)
+    print('False positive', false_positive)
+    print('Bordering, Too far', bordering, too_far)
+    print('Max GT index:', max_idx_gt)
 
     return gt_matched, m_matched
 
@@ -105,13 +110,19 @@ def match_all():
         print('Matched {} cells out of max {}'.format(len(m_match), len(m_cells)))
 
         for i, (m_, gt_) in tqdm(enumerate(zip(m_match, gt_match))):
-            try:
-                assert len(m_.data.data_dict['storm_inner']), len(gt_.data.data_dict['storm_inner'])
-            except AssertionError:
-                print(i)
+            m_i = m_cells.name.tolist().index(m_.rstrip())
+            g_i = gt_cells.name.tolist().index(gt_.rstrip())
 
-        save('cell_obj/gt_cells_ph_{}_match_raw.hdf5'.format(ph), CellList(gt_match))
-        save('cell_obj/m_cells_ph_{}_match_raw.hdf5'.format(ph), CellList(m_match))
+            try:
+                assert len(m_cells[m_i].data.data_dict['storm_inner']) == len(gt_cells[g_i].data.data_dict['storm_inner'])
+            except AssertionError:
+                print('Assertion error:', i)
+
+        with open('matched_names/gt_cells_ph_{}_match.txt'.format(ph), 'w') as f:
+            f.writelines(gt_match)
+
+        with open('matched_names/m_cells_ph_{}_match.txt'.format(ph), 'w') as f:
+            f.writelines(m_match)
 
 
 
@@ -177,7 +188,7 @@ def optimize_all():
 
 
 if __name__ == '__main__':
-    optimize_all()
+    match_all()
 
     #
     # binary  = np.load('binary.npy')

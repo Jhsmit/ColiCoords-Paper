@@ -20,16 +20,8 @@ def gen_synthcells(num):
     st_num = list(np.random.normal(500, 50, size=2*num))  # Number of STORM localizations (membrane distributed) per cell
     st_ints = list(np.random.normal(200, 25, size=2*num))  # Fluorescence intensity of STORM localizations
 
-    # Radial model for generating cytosolic background
-    psf = PSF(sigma=1.54)
-    rm = RDistModel(psf, r='equal', mem=Memory(verbose=0))
-
     cell_list = SynthCellList(lengths, radii, curvatures, pad_width=20)
-#    bf_rdist = np.loadtxt('brightfield_r_dist.txt')
     x_out = np.genfromtxt('r_dist_cells_xvals_final.txt')
-    # y_out[122:] = y_out[121]
-    # y_out -= y_out[121]
-    # y_out /= y_out.max()
 
     for cell, y_out in tqdm(zip(cell_list, yield_bf()), total=len(cell_list)):
         st_int = st_ints.pop()
@@ -91,85 +83,10 @@ def measure_r(file_path):
     return r
 
 
-def test_bf():
-    bf_rdist = np.loadtxt('brightfield_r_dist.txt')
-    x_out, y_out = bf_rdist.T
-    y_out -= y_out[-5:].mean()
-    y_out /= y_out.max()
-    cell_list = load('temp_cells.hdf5')
-    cell = cell_list[0]
-
-    plt.plot(y_out)
-    plt.show()
-
-    y_out[122:] = y_out[121]
-    y_out -= y_out[121]
-    y_out /= y_out.max()
-    plt.plot(y_out)
-    plt.show()
-    bf_img = np.interp(cell.coords.rc, x_out, y_out)
-
-    fig, axes = plt.subplots(1, 2)
-    axes[0].imshow(cell.coords.rc)
-    axes[1].imshow(bf_img)
-    plt.show()
-
-
 if __name__ == '__main__':
 
-    #test_bf()
-    #cell_list = gen_synthcells(25000)
-    #save('cells_final.hdf5', cell_list)
-    cell_list = load('cells_final_selected.hdf5')
-    # print(cell_list[0].data.names)
-    # b = np.array([len(cell.data.names) == 6 for cell in cell_list])
-    # print(np.sum(b))
-    #
-    # save('cells_final_selected.hdf5', cell_list[b])
+    cell_list = gen_synthcells(25000)
 
-
-
-
-    #
-    # olay = mh.overlay(cell_list[0].data.data_dict['brightfield'], red = cell_list[0].data.data_dict['binary'])
-    # plt.imshow(olay)
-    # plt.show()
-
-    fig, axes = plt.subplots(1, 3)
-    cp = CellPlot(cell_list[3])
-    cp.imshow('binary', ax=axes[0])
-    cp.imshow('brightfield', ax=axes[1], alpha=0.9, cmap='gray')
-    cp.plot_storm(ax=axes[2], method='gauss')
-    cp.plot_outline()
-    plt.show()
-    #
-
-
-    fig, axes = plt.subplots(1, 3)
-    cp = CellPlot(cell_list[3000])
-    cp.imshow('binary', ax=axes[0])
-    cp.imshow('brightfield', ax=axes[1], alpha=0.9, cmap='gray')
-    cp.plot_storm(ax=axes[2], method='gauss')
-    cp.plot_outline()
-    plt.show()
-    # cell_list[0].measure_r('brightfield', mode='mid')
-    # print(cell_list[0].radius)
-    # cp = CellPlot(cell_list[0])
-    # #cp.imshow('binary', cmap='OrRd')
-    # cp.imshow('foci_inner', alpha=0.9, cmap='gray')
-    # cp.plot_storm(data_name='storm_inner')
-    #
-    #
-    # cp.plot_outline()
-    #
-    # plt.show()
-    #
-    # cp.imshow('foci_outer', alpha=0.9, cmap='gray')
-    # cp.plot_storm(data_name='storm_outer')
-    # cp.plot_outline()
-    #
-    # plt.show()
-    #
-    # cp.plot_storm(method='gauss', data_name='storm_inner')
-    # cp.plot_storm(method='gauss', data_name='storm_outer', alpha_cutoff=0.5)
-    # plt.show()
+    # Remove cells with incorrect amount of data elements (misisng STORM data)
+    b = np.array([len(cell.data.names) == 6 for cell in cell_list])
+    save('cell_obj/cells_final_selected.hdf5', cell_list[b])

@@ -1,13 +1,12 @@
-from colicoords.synthetic_data import SynthCell, SynthCellList, add_readout_noise, draw_poisson
-from colicoords import load, Data, CellPlot
-from colicoords.preprocess import filter_binaries, data_to_cells
-from colicoords.minimizers import DifferentialEvolution
+from colicoords.synthetic_data import add_readout_noise, draw_poisson
+from colicoords import load
 import numpy as np
 import mahotas as mh
-from scipy.stats import moment
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import os
 import tifffile
+
 
 def chunk_list(l, sizes):
     prev = 0
@@ -80,13 +79,8 @@ def generate_image(cells, shape, max_dist=5):
             min2 = np.max([min2, 0])
             max2 = np.min([max2, shape[1]])
 
-            #Check if the position is valid, overlapping binary
-            # temp_binary = out_dict['binary'].copy()
-            # temp_binary[min1:max1, min2:max2] += data_cropped.binary_img
-            #
-            # if np.any(temp_binary == 2):
-            #     continue
 
+            #
             temp_binary = np.zeros(shape)
             temp_binary[min1:max1, min2:max2] = data_cropped.binary_img
             out_binary = (out_dict['binary'] > 0).astype(int)
@@ -141,28 +135,26 @@ def gen_image_from_storm(storm_table, shape, sigma=1.54, sigma_std=0.3):
 
 
 def gen_im():
-    cell_list = load('cells_final_selected.hdf5')
-    #cell_list = load('temp_cells.hdf5')
-    print('thisasdfaewrasdfas')
-    # print(type(cell_list[0].data.data_dict['storm_inner']))
-    # print(cell_list[0].data.data_dict['storm_inner']['frame'])
+    cell_list = load('cell_obj/cells_final_selected.hdf5')
 
     out_dict = generate_images(cell_list, 1000, 10, 3, (512, 512))
-    print(list(out_dict.keys()))
-    print(len(out_dict['storm_inner']))
-    np.save('binary.npy', out_dict['binary'])
-    np.save('brightfield.npy', out_dict['brightfield'])
-    np.save('foci_inner.npy', out_dict['foci_inner'])
-    np.save('foci_outer.npy', out_dict['foci_outer'])
-    np.save('storm_inner.npy', out_dict['storm_inner'])
-    np.save('storm_outer.npy', out_dict['storm_outer'])
 
-    tifffile.imsave('binary.tif', out_dict['binary'], bigtiff=True)
-    tifffile.imsave('brightfield.tif', out_dict['brightfield'], bigtiff=True)
-    tifffile.imsave('foci_inner.tif', out_dict['foci_inner'])
-    tifffile.imsave('foci_outer.tif', out_dict['foci_outer'])
-    np.savetxt('storm_inner.txt', out_dict['storm_inner'])
-    np.savetxt('storm_outer.txt', out_dict['storm_inner'])
+    if not os.path.exists('images'):
+        os.mkdir('images')
+
+    np.save('images/binary.npy', out_dict['binary'])
+    np.save('images/brightfield.npy', out_dict['brightfield'])
+    np.save('images/foci_inner.npy', out_dict['foci_inner'])
+    np.save('images/foci_outer.npy', out_dict['foci_outer'])
+    np.save('images/storm_inner.npy', out_dict['storm_inner'])
+    np.save('images/storm_outer.npy', out_dict['storm_outer'])
+
+    tifffile.imsave('images/binary.tif', out_dict['binary'])
+    tifffile.imsave('images/brightfield.tif', out_dict['brightfield'])
+    tifffile.imsave('images/foci_inner.tif', out_dict['foci_inner'])
+    tifffile.imsave('images/foci_outer.tif', out_dict['foci_outer'])
+    np.savetxt('images/storm_inner.txt', out_dict['storm_inner'])
+    np.savetxt('images/storm_outer.txt', out_dict['storm_inner'])
 
 
 def load_im():
