@@ -4,6 +4,7 @@ import numpy as np
 import fastcluster as fc
 from scipy.cluster.hierarchy import fcluster
 
+
 def filter_cells(m_names, gt_names, m_cells, gt_cells, max_d=3):
     """Corrects cells with too many STORM localizations and removes cells with too few"""
 
