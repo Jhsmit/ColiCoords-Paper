@@ -46,4 +46,7 @@ print('measured moments', [moment(img, moment=n+1, axis=None) for n in range(5)]
 # black: 30000
 # white: 33000
 
+plt.imshow(img[0])
+plt.show()
+
 

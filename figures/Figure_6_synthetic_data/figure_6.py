@@ -1,111 +1,107 @@
 from colicoords.synthetic_data import SynthCell, SynthCellList, add_readout_noise
 from colicoords import load, Data, CellPlot
-from colicoords.preprocess import filter_binaries, data_to_cells
-from colicoords.minimizers import DifferentialEvolution
 import numpy as np
 import mahotas as mh
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import os
+import tifffile
+import matplotlib.colors as mcolors
 
 
-from generate_images import generate_images
+#https://stackoverflow.com/questions/16834861/create-own-colormap-using-matplotlib-and-plot-color-scale
+def make_colormap(seq):
+    """Return a LinearSegmentedColormap
+    seq: a sequence of floats and RGB-tuples. The floats should be increasing
+    and in the interval (0,1).
+    """
+    seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
+    cdict = {'red': [], 'green': [], 'blue': []}
+    for i, item in enumerate(seq):
+        if isinstance(item, float):
+            r1, g1, b1 = seq[i - 1]
+            r2, g2, b2 = seq[i + 1]
+            cdict['red'].append([item, r1, r2])
+            cdict['green'].append([item, g1, g2])
+            cdict['blue'].append([item, b1, b2])
+    return mcolors.LinearSegmentedColormap('CustomMap', cdict)
 
-def gen_im():
-    cell_list = load('temp_cells.hdf5')
-    # print(type(cell_list[0].data.data_dict['storm_inner']))
-    # print(cell_list[0].data.data_dict['storm_inner']['frame'])
 
-    out_dict = generate_images(cell_list, 5, 10, 3, (512, 512))
+c = mcolors.ColorConverter().to_rgb
+cmm = make_colormap(
+    [ c('black'), c('magenta')])
 
-    np.save('binary.npy', out_dict['binary'])
-    np.save('brightfield.npy', out_dict['brightfield'])
-    np.save('storm.npy', out_dict['storm_inner'])
+cmc = make_colormap(
+    [c('black'), c('cyan')])
 
 
-def load_im():
-    return np.load('binary.npy'), np.load('brightfield.npy'), np.load('storm.npy')
+#https://stackoverflow.com/questions/42475508/how-to-combine-gridspec-with-plt-subplots-to-eliminate-space-between-rows-of-s/42481878
+data_dir = r'D:\Projects\CC_paper\figures\Figure_6_synthetic_data'
+bf_10000 = tifffile.imread(os.path.join(data_dir, 'temp_dir', 'bf_10000_photons.tif'))
+ph = 10000
+#names = ['raw', 'brightfield', 'brightfield_DE', 'binary', 'storm_inner']
+names = ['raw', 'binary', 'brightfield', 'storm_inner']
+
+c_dict = {name: load(os.path.join(data_dir, 'temp_dir', f'm_cells_ph_{ph}_match_{name}_s100.hdf5')) for name in names}
+gt_cells = load(os.path.join(data_dir, 'temp_dir', 'gt_cells_ph_10000_match_raw_s100.hdf5'))
+
+for name in names:
+    t_cells = c_dict[name]
+    for c1, c2 in zip(gt_cells[:2], t_cells[:2]):
+        print(len(c1.data.data_dict['storm_inner']), len(c2.data.data_dict['storm_inner']))
+        assert len(c1.data.data_dict['storm_inner']) == len(c2.data.data_dict['storm_inner'])
+
+r_vals_gt = np.concatenate([c.coords.calc_rc(c.data.data_dict['storm_inner']['x'], c.data.data_dict['storm_inner']['y']) for c in gt_cells[:10]])
 
 
-cell_list = load('temp_cells.hdf5')
-binary, brightfield, storm = load_im()
+plt.figure(figsize=(17.8/2.54, 3))
 
-plt.imshow(binary[0], extent=[0, 512, 512, 0])
-b = storm['frame'] == 1
+gs1 = gridspec.GridSpec(1, 1)
+gs2 = gridspec.GridSpec(4, 1)
+gs3 = gridspec.GridSpec(2, 4)
+
+gs1.update(left=0.05, right=0.4, wspace=0)
+gs2.update(left=0.4, right=0.55, wspace=0)
+gs3.update(left=0.60, right=0.95, wspace=0.05)
+
+ax1 = plt.subplot(gs1[0])
+ax1.imshow(bf_10000[0], cmap='gray')
+ax1.get_xaxis().set_ticks([])
+ax1.get_yaxis().set_ticks([])
+print(gs2)
+
+for name, gs in zip(names, gs2):
+    cell = c_dict[name][0]
+    cp = CellPlot(cell)
+    ax = plt.subplot(gs)
+    alpha=1
+    if name in ['raw', 'binary']:
+        cp.imshow('binary', ax=ax)
+
+    elif name == 'brightfield':
+        cp.imshow('brightfield')
+    elif name == 'storm_inner':
+        cp.imshow(np.zeros(cell.data.shape), cmap='gray')
+        cp.plot_storm(data_name=name, ax=ax, method='gauss', upscale=2, cmap=cmc)
+        cp.plot_storm(data_name='storm_outer', ax=ax, method='gauss', cmap=cmm, alpha_cutoff=0.25)
+        alpha=0.2
+    cp.plot_outline(ax=ax, alpha=alpha)
+
+    ax.get_xaxis().set_ticks([])
+    ax.get_yaxis().set_ticks([])
+
+print(gs3)
+print(gs3[0, 2])
+
+for i, name in enumerate(names):
+    m_cells = c_dict[name]
+    m_vals_gt = np.concatenate(
+        [c.coords.calc_rc(c.data.data_dict['storm_inner']['x'], c.data.data_dict['storm_inner']['y']) for c in m_cells[:10]])
+    ax = plt.subplot(gs3[0, i])
+    ax.plot(m_vals_gt, r_vals_gt)
+
+
+for gs in gs3:
+    ax = plt.subplot(gs)
+
 plt.show()
-
-#
-# plt.imshow(binary[0]==1)
-# plt.show()
-#
-# plt.imshow(binary[0])
-# plt.show()
-#
-bin_filter = filter_binaries(binary)
-
-data = Data()
-data.add_data(bin_filter.astype(int), 'binary')
-data.add_data(brightfield, 'brightfield')
-data.add_data(storm, 'storm')
-#
-print('unique', np.unique(bin_filter))
-print('unique', np.unique(binary))
-
-plt.imshow(bin_filter[0], extent=[0, 512, 512, 0])
-plt.show()
-
-cells = data_to_cells(data)
-c = cells[0]
-print(c.name)
-#c.optimize('brightfield', minimizer=DifferentialEvolution)
-c.optimize()
-#c.optimize('storm')
-cp = CellPlot(c)
-fig, axes = plt.subplots(1, 3)
-cp.imshow('binary', ax=axes[0])
-cp.plot_outline(ax=axes[0])
-cp.imshow('brightfield', ax=axes[1])
-cp.plot_storm(ax=axes[1])
-cp.plot_outline(ax=axes[2])
-cp.plot_storm(ax=axes[2], method='gauss', upscale=2)
-cp.show()
-
-
-r_vals = c.coords.calc_rc(c.data.data_dict['storm']['x'], c.data.data_dict['storm']['y'])
-c02_gt = cell_list[0]
-
-cp = CellPlot(c02_gt)
-fig, axes = plt.subplots(1, 3)
-cp.imshow('binary', ax=axes[0])
-cp.plot_outline(ax=axes[0])
-cp.imshow('brightfield', ax=axes[1])
-cp.plot_storm(ax=axes[1])
-cp.plot_outline(ax=axes[2])
-cp.plot_storm(ax=axes[2], method='gauss', upscale=2)
-cp.show()
-
-r_vals_gt = c02_gt.coords.calc_rc(c02_gt.data.data_dict['storm_inner']['x'], c02_gt.data.data_dict['storm_inner']['y'])
-
-plt.plot(r_vals, r_vals_gt, 'r.')
-ax = plt.gca()
-ax.set_aspect(1)
-# plt.xlim(0.9*r_vals.min(), 1.1*r_vals.max())
-# plt.ylim(0.9*r_vals.min(), 1.1*r_vals.max())
-# plt.plot([0, 10], [0, 10], 'k')
-plt.show()
-
-print('mean diff', np.abs(r_vals - r_vals_gt).mean())
-
-# plt.imshow(out_dict['binary'][0])
-# plt.show()
-#
-# print(type(out_dict['brightfield']))
-# bf = out_dict['brightfield'] * 10
-# bf_noise = add_readout_noise(bf, 5)
-#
-# plt.imshow(bf_noise[0], cmap='gray')
-# plt.show()
-# plt.imshow(bf[0], cmap='gray')
-# plt.show()
-#
-# storm = gen_image_from_storm(out_dict['storm_inner'], (512, 512))
-# plt.imshow(storm)
-# plt.show()
