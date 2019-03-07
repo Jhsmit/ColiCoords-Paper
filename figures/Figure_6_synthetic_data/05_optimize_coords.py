@@ -1,4 +1,3 @@
-from colicoords.minimizers import DifferentialEvolution
 from colicoords import load, save
 import numpy as np
 
