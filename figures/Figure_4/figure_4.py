@@ -91,5 +91,5 @@ axes[2, 0].set_ylabel('Fluorescence')
 
 plt.show()
 #output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
-#plt.savefig(os.path.join(output_folder, 'Figure3.pdf'), bbox_inches='tight')
+#plt.savefig(os.path.join(output_folder, 'Figure_4.pdf'), bbox_inches='tight')
 

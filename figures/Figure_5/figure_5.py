@@ -7,7 +7,7 @@ from pycorrelate import ucorrelate
 from scipy.ndimage.filters import uniform_filter1d
 
 
-upscale = 1
+upscale = 15
 cell_storm = load(r'D:\_processed_data\2018\20181204_lacy_sr\20181204_cell_10.hdf5')
 
 save('storm_cell.cc', cell_storm)
@@ -111,6 +111,9 @@ freq = np.fft.fftfreq(n, d=dx)
 
 #axes_bot = [plt.subplot(bot_grid[i]) for i in range(3)]
 
+import seaborn as sns
+sns.set_style('ticks')
+
 ax_loc = plt.subplot(bot_grid[0])
 ax_loc.plot(x_out*(80/1000), y_out)
 ax_loc.set_xlim(0, np.max(x_out)*(80/1000))
@@ -120,14 +123,29 @@ ax_loc.set_xlabel('Distance ($\mu$m)', labelpad=0)
 ax_loc.set_ylim(0)
 
 
-bax_acf = plt.subplot(bot_grid[1])
-bax_acf.plot(x_out*(80/1000), acf / acf.max())
-#axes_bot[1].set_yticks([0, 1])
-bax_acf.set_xlim(0, np.max(x_out)*(80/1000))
-bax_acf.set_ylabel('Amplitude')
+#Autocorrelation plot
+acf_sub = bot_grid[1].subgridspec(1, 2, wspace=0, width_ratios=[0.2, 0.8])
+acf_axs0 = plt.subplot(acf_sub[0])
+acf_axs1 = plt.subplot(acf_sub[1])
 
-#axes_bot[1].set_title('Autocorrelation')
-bax_acf.set_xlabel('Lag distance ($\mu$m)', labelpad=0)
+
+acf_axs0.plot(x_out*(80/1000), acf / acf.max())
+#axes_bot[1].set_yticks([0, 1])
+acf_axs0.set_xlim(0, 0.25)
+acf_axs0.set_ylabel('Amplitude')
+
+acf_axs1.plot(x_out*(80/1000), acf / acf.max())
+#axes_bot[1].set_yticks([0, 1])
+acf_axs1.set_xlim(0.25, np.max(x_out)*(80/1000))
+acf_axs1.set_yticks([])
+
+# https://stackoverflow.com/questions/6963035/pyplot-axes-labels-for-subplots
+acf_global = fig.add_subplot(bot_grid[1], frameon=False)
+
+acf_global.set_xlabel('Lag distance ($\mu$m)', labelpad=15)
+acf_global.set_xticks([])
+acf_global.set_yticks([])
+
 
 #axes_bot[2].set_title('Fourier Transform')
 ax_fft = plt.subplot(bot_grid[2])
@@ -148,14 +166,16 @@ bot_grid.tight_layout(fig, rect=[0.05, 0, 1, frac_bot], h_pad=0.5, w_pad=0)
 p0 = ax_loc.get_position()
 fig.text(0.0, p0.y0 + p0.height, 'B', fontsize=15)
 
-p0 = bax_acf.get_position()
+p0 = acf_axs0.get_position()
 fig.text(0.0, p0.y0 + p0.height, 'C', fontsize=15)
 
 p0 = ax_fft.get_position()
 fig.text(0.0, p0.y0 + p0.height, 'D', fontsize=15)
+fig.align_ylabels([ax_loc, acf_axs0, ax_fft])
 
-plt.show()
+#plt.show()
 
-#output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
-#plt.savefig(os.path.join(output_folder, 'Figure4_test.pdf'), bbox_inches='tight', dpi=1000)
+import os
+output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
+plt.savefig(os.path.join(output_folder, 'Figure_5.pdf'), bbox_inches='tight', dpi=1000)
 #
