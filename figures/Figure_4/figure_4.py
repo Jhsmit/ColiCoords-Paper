@@ -6,87 +6,90 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 from colicoords.support import pad_cell
 import os
 
-#cell = load(r'../../datasets/ds3_controls_20170720/lacy_selected_cell_3.cc')
-
-cell = load(r'../../datasets/ds1_c41_epec_lacy\img191c002.cc')
-cell_storm = load(r'D:\_processed_data\2018\20180312_yichen_lacy_eyfp\SR\03_14mW\cell4.cc')
-
-save('storm_cell.cc', cell_storm)
+cell = load(r'img191c002.hdf5')
 
 data = Data()
 for data_elem in cell.data.data_dict.values():
     data.add_data(data_elem, data_elem.dclass, data_elem.name)
 cell_raw = Cell(data[:, 1:-1])
-
-storm_padded = pad_cell(cell_storm, (70, 70))
-
 reload = False
+
 if reload:
-    cell_storm_opt = storm_padded.copy()
-    cell_storm_opt.optimize('storm')
-    save('cell_storm_opt.cc', cell_storm_opt)
+    cell_bin = cell_raw.copy()
+    cell_bin.optimize()
+    save('cell_bin.hdf5', cell_bin)
+
+    cell_bf = cell_raw.copy()
+    cell_bf.optimize('brightfield')
+    cell_bf.measure_r()
+    save('cell_bf.hdf5', cell_bf)
+
+    cell_flu = cell_raw.copy()
+    cell_flu.optimize('gain50')
+    cell_flu.measure_r()
+    save('cell_flu.hdf5', cell_flu)
+
 else:
-    cell_bin = load('cell_bin.cc')
-    cell_bf = load('cell_bf.cc')
-    cell_flu = load('cell_flu.cc')
-    cell_storm_opt = load('cell_storm_opt.cc')
+    cell_bin = load('cell_bin.hdf5')
+    cell_bf = load('cell_bf.hdf5')
+    cell_flu = load('cell_flu.hdf5')
 
 fig_width = 8.53534 / 2.54
-fig, axes = plt.subplots(2, 2, figsize=(fig_width, (2/2)*fig_width))
+fig, axes = plt.subplots(3, 3, figsize=(fig_width, (3/3)*fig_width))
 
 for ax in axes.flatten():
     ax.tick_params(axis='x', labelbottom=False)
     ax.tick_params(axis='y', labelleft=False)
 
-upscale = 2
+cp = CellPlot(cell_raw)
+cp.imshow('binary', ax=axes[0, 0], cmap='gray_r')
+cp.plot_outline(ax=axes[0, 0], alpha=0.5)
 
-cp = CellPlot(storm_padded)
-cp.imshow('binary', ax=axes[0, 0], cmap='gray_r', alpha=0.3)
-cp.plot_storm(method='gauss', alpha_cutoff=0.3, ax=axes[0, 0], upscale=upscale, interpolation='spline16')
-#cp.plot_storm(method='plot', ax=axes[0, 0], color='b', alpha=0.5, markersize=1)
-cp.plot_outline(ax=axes[0, 0], alpha=0.7)
-axes[0, 0].plot([15, 15, 27, 27, 15], [28, 40, 40, 28, 28], color='k', linestyle='--')
+cp.imshow(cell_raw.coords.rc < cell_raw.coords.r, ax=axes[0, 1], cmap='gray_r')
 
+cp = CellPlot(cell_bin)
+cp.imshow('binary', ax=axes[0, 2], cmap='gray_r')
+cp.plot_outline(ax=axes[0, 2], alpha=0.5)
 
-cp.plot_storm(method='gauss', alpha_cutoff=0.3, ax=axes[0, 1], upscale=upscale, interpolation='spline16')
-cp.plot_storm(method='plot', ax=axes[0, 1], color='y', alpha=1, markersize=1.5)
-cp.plot_outline(ax=axes[0, 1], alpha=0.7)
-cp.plot_midline(ax=axes[0, 1], alpha=0.7)
+cp = CellPlot(cell_raw)
+cp.imshow('brightfield', ax=axes[1, 0], cmap='gray')
+cp.plot_outline(ax=axes[1, 0], alpha=0.5)
 
-axes[0, 0].set_xlim(15, 55)
-axes[0, 0].set_ylim(55, 15)
+cp.imshow(cell_raw.reconstruct_image('brightfield'), ax=axes[1, 1], cmap='gray')
 
-axes[0, 1].set_xlim(15, 27)
-axes[0, 1].set_ylim(40, 28)
+cp = CellPlot(cell_bf)
+cp.imshow('brightfield', ax=axes[1, 2], cmap='gray')
+cp.plot_outline(ax=axes[1, 2], alpha=0.5)
 
-cp = CellPlot(cell_storm_opt)
-cp.plot_storm(method='gauss', alpha_cutoff=0.3, ax=axes[1, 0], upscale=upscale, interpolation='spline16')
-cp.plot_outline(ax=axes[1, 0], alpha=0.7)
-axes[1, 0].plot([15, 15, 27, 27, 15], [28, 40, 40, 28, 28], color='k', linestyle='--')
+cp = CellPlot(cell_raw)
+cp.imshow('gain50', ax=axes[2, 0])
+cp.plot_outline(ax=axes[2, 0], alpha=0.5)
 
+cp.imshow(cell_raw.reconstruct_image('gain50'), ax=axes[2, 1])
 
-cp.plot_storm(method='gauss', alpha_cutoff=0.3, ax=axes[1, 1], upscale=upscale, interpolation='spline16')
-cp.plot_storm(method='plot', ax=axes[1, 1], color='y', alpha=1, markersize=1.5)
-cp.plot_outline(ax=axes[1, 1], alpha=0.7)
-cp.plot_midline(ax=axes[1, 1], alpha=0.7)
+cp = CellPlot(cell_flu)
+cp.imshow('gain50', ax=axes[2, 2])
+cp.plot_outline(ax=axes[2, 2], alpha=0.5)
 
+axes[0, 0].set_title("A")
+axes[0, 1].set_title("A")
+axes[0, 2].set_title("A")
 
-axes[1, 0].set_xlim(15, 55)
-axes[1, 0].set_ylim(55, 15)
-
-axes[1, 1].set_xlim(15, 27)
-axes[1, 1].set_ylim(40, 28)
-
-axes[0, 0].set_ylabel("Initial")
-axes[1, 0].set_ylabel("Final")
-#
-# axes[0, 0].set_ylabel('Binary')
-# axes[1, 0].set_ylabel('Brightfield')
-# axes[2, 0].set_ylabel('Fluorescence')
-# axes[3, 0].set_ylabel('STORM')
+axes[0, 0].set_ylabel('A')
+axes[1, 0].set_ylabel('A')
+axes[2, 0].set_ylabel('A')
 
 plt.tight_layout()
-#plt.show()
-output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
-plt.savefig(os.path.join(output_folder, 'Figure4.pdf'), bbox_inches='tight')
+
+axes[0, 0].set_title("Initial")
+axes[0, 1].set_title("Calculated")
+axes[0, 2].set_title("Final")
+
+axes[0, 0].set_ylabel('Binary')
+axes[1, 0].set_ylabel('Brightfield')
+axes[2, 0].set_ylabel('Fluorescence')
+
+plt.show()
+#output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
+#plt.savefig(os.path.join(output_folder, 'Figure3.pdf'), bbox_inches='tight')
 

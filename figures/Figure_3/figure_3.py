@@ -3,93 +3,77 @@ from matplotlib.gridspec import GridSpec
 import numpy as np
 from colicoords import Cell, load, save, CellPlot, Data
 from mpl_toolkits.axes_grid1 import ImageGrid
-from colicoords.support import pad_cell
 import os
 
-cell = load(r'../../data/img191c002.hdf5')
-
+cell = load(r'../../data/lacy_selected_cell_3.hdf5')
 data = Data()
+
 for data_elem in cell.data.data_dict.values():
     data.add_data(data_elem, data_elem.dclass, data_elem.name)
-cell_raw = Cell(data[:, 1:-1])
-reload = True
-
-if reload:
-    cell_bin = cell_raw.copy()
-    cell_bin.optimize()
-    save('cell_bin.hdf5', cell_bin)
-
-    cell_bf = cell_raw.copy()
-    cell_bf.optimize('brightfield')
-    cell_bf.measure_r()
-    save('cell_bf.hdf5', cell_bf)
-
-    cell_flu = cell_raw.copy()
-    cell_flu.optimize('gain50')
-    cell_flu.measure_r()
-    save('cell_flu.hdf5', cell_flu)
-
-else:
-    cell_bin = load('cell_bin.hdf5')
-    cell_bf = load('cell_bf.hdf5')
-    cell_flu = load('cell_flu.hdf5')
+cell_raw = Cell(data)
 
 fig_width = 8.53534 / 2.54
-fig, axes = plt.subplots(3, 3, figsize=(fig_width, (3/3)*fig_width))
+arrow_kwargs = {'color': 'k', 'head_width': 2, 'head_length': 3, 'length_includes_head': True, 'overhang': 0.2,
+                'linewidth': 1}
+fig, axes = plt.subplots(3, 2, figsize=(fig_width, 5))
 
 for ax in axes.flatten():
     ax.tick_params(axis='x', labelbottom=False)
     ax.tick_params(axis='y', labelleft=False)
 
+
+empty_img = np.zeros_like(cell_raw.data.data_dict['binary'])
+empty_img[:] = np.nan
+
 cp = CellPlot(cell_raw)
+
 cp.imshow('binary', ax=axes[0, 0], cmap='gray_r')
-cp.plot_outline(ax=axes[0, 0], alpha=0.5)
+cp.plot_midline(ax=axes[0, 0])
+cp.plot_outline(ax=axes[0, 0])
+axes[0, 0].text(0.05, 0.95, 'A', horizontalalignment='left', verticalalignment='top', transform=axes[0, 0].transAxes, fontsize=15)
 
-cp.imshow(cell_raw.coords.rc < cell_raw.coords.r, ax=axes[0, 1], cmap='gray_r')
+ymax, xmax = empty_img.shape
+cp.imshow(empty_img, ax=axes[0, 1], cmap='gray_r')
+axes[0, 1].axis('off')
+axes[0, 1].plot([0, xmax/2, xmax/2], [ymax/2, ymax/2, 0.65*ymax], color='k', linewidth=1)
+axes[0, 1].arrow(xmax/2, 0.85*ymax, 0, 0.15*ymax - 0.05*ymax, **arrow_kwargs)
+axes[0, 1].text(0.5, 0.25, 'Calculate $r_c$', horizontalalignment='center', verticalalignment='center', transform=axes[0,1].transAxes)
 
-cp = CellPlot(cell_bin)
-cp.imshow('binary', ax=axes[0, 2], cmap='gray_r')
-cp.plot_outline(ax=axes[0, 2], alpha=0.5)
 
-cp = CellPlot(cell_raw)
-cp.imshow('brightfield', ax=axes[1, 0], cmap='gray')
-cp.plot_outline(ax=axes[1, 0], alpha=0.5)
+cp.imshow(empty_img, ax=axes[1, 0], cmap='gray_r')
+axes[1, 0].axis('off')
+axes[1, 0].text(0.5, 0.5, 'Compare and\nupdate parameters', horizontalalignment='center', verticalalignment='center', transform=axes[1, 0].transAxes)
+axes[1, 0].plot([xmax/2, xmax/2], [ymax, 2*ymax/3], color='k', linewidth=1)
+axes[1, 0].arrow(xmax/2, ymax/3, 0, -ymax/3 + 0.05*ymax, **arrow_kwargs)
 
-cp.imshow(cell_raw.reconstruct_image('brightfield'), ax=axes[1, 1], cmap='gray')
+ymax, xmax = cell_raw.data.shape
+r_bk = cell_raw.coords.r
+for r in np.arange(5, 40, 5):
+    cell_raw.coords.r = r
+    cp.plot_outline(ax=axes[1, 1], color='k', linewidth=0.25)
+cell_raw.coords.r = r_bk
+cp.imshow(cell_raw.coords.rc, ax=axes[1, 1])
+axes[1, 1].text(0.05, 0.95, 'B', horizontalalignment='left', verticalalignment='top', transform=axes[1, 1].transAxes, fontsize=15)
 
-cp = CellPlot(cell_bf)
-cp.imshow('brightfield', ax=axes[1, 2], cmap='gray')
-cp.plot_outline(ax=axes[1, 2], alpha=0.5)
 
-cp = CellPlot(cell_raw)
-cp.imshow('gain50', ax=axes[2, 0])
-cp.plot_outline(ax=axes[2, 0], alpha=0.5)
+comparison = (cell_raw.coords.rc < cell_raw.coords.r).astype(int) + cell_raw.data.data_dict['binary']
+cp.imshow(comparison, ax=axes[2, 0], cmap='gray_r')
+axes[2, 0].text(0.05, 0.95, 'C', horizontalalignment='left', verticalalignment='top', transform=axes[2, 0].transAxes, fontsize=15)
 
-cp.imshow(cell_raw.reconstruct_image('gain50'), ax=axes[2, 1])
 
-cp = CellPlot(cell_flu)
-cp.imshow('gain50', ax=axes[2, 2])
-cp.plot_outline(ax=axes[2, 2], alpha=0.5)
+cp.imshow(empty_img, ax=axes[2, 1], cmap='gray_r')
+axes[2, 1].plot([xmax/2, xmax/2], [0, 0.2*ymax], color='k', linewidth=1)
+axes[2, 1].plot([xmax/2, xmax/2], [0.375*ymax, 0.5*ymax], color='k', linewidth=1)
 
-axes[0, 0].set_title("A")
-axes[0, 1].set_title("A")
-axes[0, 2].set_title("A")
+axes[2, 1].arrow(xmax/2, ymax/2, (-xmax/2) + 0.05*xmax, 0, **arrow_kwargs)
+axes[2, 1].axis('off')
+axes[2, 1].text(0.5, 0.7, 'Thresholding', horizontalalignment='center', verticalalignment='center',
+                transform=axes[2, 1].transAxes)
 
-axes[0, 0].set_ylabel('A')
-axes[1, 0].set_ylabel('A')
-axes[2, 0].set_ylabel('A')
 
 plt.tight_layout()
 
-axes[0, 0].set_title("Initial")
-axes[0, 1].set_title("Calculated")
-axes[0, 2].set_title("Final")
-
-axes[0, 0].set_ylabel('Binary')
-axes[1, 0].set_ylabel('Brightfield')
-axes[2, 0].set_ylabel('Fluorescence')
-
+plt.savefig('test.pdf', dpi=1000)
 plt.show()
-#output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
-#plt.savefig(os.path.join(output_folder, 'Figure3.pdf'), bbox_inches='tight')
-
+# output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
+# plt.savefig(os.path.join(output_folder, 'Figure1.pdf'), bbox_inches='tight')

@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from colicoords import load, CellPlot
 import matplotlib.colors as mcolors
 import matplotlib.gridspec as gridspec
-
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import os
 
@@ -104,7 +103,7 @@ def make_obj_hist(ax, values, step=1):
     axins.yaxis.offsetText.set_position((-0.15, 0.75))
 
 
-fig = plt.figure(figsize=(10, 17.8 / 2.54), constrained_layout=True)
+fig = plt.figure(figsize=(10, 17.8 / 2.54))
 outer_grid = gridspec.GridSpec(2, 3, wspace=0.1, hspace=0.15, height_ratios=[0.5, 1])
 outer_grid.update(left=0.05, right=0.98, top=0.965)
 for i, ph in enumerate(photons):
@@ -116,38 +115,30 @@ for i, ph in enumerate(photons):
     ax1.set_anchor('W')
     ax1.set_title('{} Photons'.format(ph), fontsize=10)
 
-    if ph == 500:
-        p0 = ax1.get_position()
-        fig.text(0.0, p0.y0 + p0.height, 'A', fontsize=15)
-
     ci = 0
     linewidth = 0.5
-    alpha = 0.75
+    alpha = 0.5
 
     ax2 = plt.subplot(inner_grid[0, -1])
     ax2.set_anchor('NE')
     cp = CellPlot(cell_dict[ph]['binary'][ci])
     cp.imshow("binary", ax=ax2)
     cp.plot_outline(ax=ax2, linewidth=linewidth, alpha=alpha)
-    ax2.set_title('Binary', fontsize=labelsize)
 
     ax3 = plt.subplot(inner_grid[1, -1])
     ax3.set_anchor('E')
     cp = CellPlot(cell_dict[ph]['brightfield'][ci])
     cp.imshow("brightfield", ax=ax3)
     cp.plot_outline(ax=ax3, linewidth=linewidth, alpha=alpha)
-    ax3.set_title('Brightfield', fontsize=labelsize)
 
     ax4 = plt.subplot(inner_grid[2, -1])
     ax4.set_anchor('SE')
     cp = CellPlot(cell_dict[ph]['storm_inner'][ci])
-    cp.imshow(np.zeros(cp.cell_obj.data.shape), cmap='gray', zorder=-2)  # Black background
-    cp.plot_storm(data_name='storm_inner', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=mcm)
-    cp.plot_storm(data_name='storm_outer', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=ccm)
-    cp.plot_outline(ax=ax4, linewidth=linewidth, zorder=-1, color=[1, 1, 1])
-    ax4.set_title('STORM', fontsize=labelsize)
+    cp.imshow(np.zeros(cp.cell_obj.data.shape), cmap='gray')  # Black background
+    cp.plot_storm(data_name='storm_inner', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=ccm)
+    cp.plot_storm(data_name='storm_outer', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=mcm)
+    cp.plot_outline(ax=ax4, linewidth=linewidth, alpha=alpha)
     plt.tight_layout()
-    # plt.subplots_adjust(left=0)
 
     plt.subplots_adjust(left=0, right=1, wspace=0)
 
@@ -167,38 +158,22 @@ for i, ph in enumerate(photons):
             r_gt_inner = prune(np.load(os.path.join(data_dir, 'r_values', 'r_inner_gt_ph_{}_{}.npy'.format(ph, cond))))
             r_gt_outer = prune(np.load(os.path.join(data_dir, 'r_values', 'r_outer_gt_ph_{}_{}.npy'.format(ph, cond))))
 
-            dpts_inner = len(r_m_inner)
-
-            D = np.mean(np.abs(r_m_inner - r_gt_inner))
-            RMSD = np.sqrt(np.mean((r_m_inner - r_gt_inner) ** 2))
-
             gs = inner_grid[j, 0]
             ax = plt.subplot(gs)
             make_r_hist(ax, r_gt_inner, r_gt_outer, r_m_inner, r_m_outer, step=step)
             ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0), useMathText=True)
             ax.yaxis.offsetText.set_fontsize(labelsize)
-            ax.yaxis.offsetText.set_position((-0.15, 0.95))
-
-            # ax.text(0.6, 0.8, '$D, RMSD = $\n${0:.2f}$\n${1:.2f}$'.format(D, RMSD), transform=ax.transAxes, fontsize=labelsize)
-            ax.text(0.98, 0.75, '$D:$ {0:.2f}\n$D^2:$ {1:.2f}'.format(D, RMSD), transform=ax.transAxes,
-                    fontsize=labelsize,
-                    multialignment='right', ha='right')
-
-            #             ax.text(0.7, 0.8, '$D = {0:.2f} $'.format(D), transform=ax.transAxes, fontsize=labelsize)
-            #             ax.text(0.7, 0.7, '$RMSD = {0:.2f} $'.format(RMSD), transform=ax.transAxes, fontsize=labelsize)
+            ax.yaxis.offsetText.set_position((-0.15, 1))
 
             if ph == 500:
                 labels = ['Binary', 'Brightfield', 'STORM']
                 ax.set_ylabel(labels[j])
-                if j == 0:
-                    p0 = ax.get_position()
-                    fig.text(0.0, p0.y0 + p0.height, 'B', fontsize=15)
             if j == 0:
                 ax.set_title('STORM localizations', fontsize=labelsize)
             if j < 2:
                 ax.set_xticks([])
             else:
-                ax.set_xlabel('Relative radial distance', fontsize=labelsize)
+                ax.set_xlabel('Relative distance', fontsize=labelsize)
 
             ax.tick_params(labelsize=labelsize)
 
@@ -206,13 +181,7 @@ for i, ph in enumerate(photons):
             gs = inner_grid[j, 1]
             ax = plt.subplot(gs)
 
-            r_raw = np.load(os.path.join(data_dir, 'r_values', 'r_inner_m_ph_{}_{}.npy'.format(ph, cond)))
-            dpts = np.sum(~np.isnan(r_raw), axis=1)
-
-            obj_vals = np.loadtxt(
-                os.path.join(data_dir, 'obj_values_new', 'obj_vals_storm_ph_{}_{}.txt'.format(ph, cond)))
-            obj_vals /= dpts[:, np.newaxis]
-
+            obj_vals = np.loadtxt(os.path.join(data_dir, 'obj_values', 'obj_vals_storm_ph_{}_{}.txt'.format(ph, cond)))
             v = obj_vals[:, 0] / obj_vals[:, 1]
 
             make_obj_hist(ax, v, step=1)
@@ -227,14 +196,7 @@ for i, ph in enumerate(photons):
             ax.tick_params(labelsize=labelsize)
             ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0), useMathText=True)
             ax.yaxis.offsetText.set_fontsize(labelsize)
-            ax.yaxis.offsetText.set_position((-0.15, 0.95))
+            ax.yaxis.offsetText.set_position((-0.15, 1))
 
-#     for gs in inner_grid:
-#         ax = plt.subplot(gs)
-#         ax.hist(np.random.rand(100))
-
-#     plt.tight_layout()
-
-
-plt.savefig('test.png', dpi=600)
-plt.savefig('test.pdf', dpi=1000)
+plt.savefig('Figure_6.png', dpi=1000)
+plt.savefig('Figure_6.pdf', dpi=1000)
