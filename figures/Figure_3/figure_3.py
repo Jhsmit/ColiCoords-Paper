@@ -21,12 +21,10 @@ for ax in axes.flatten():
     ax.tick_params(axis='x', labelbottom=False)
     ax.tick_params(axis='y', labelleft=False)
 
-
 empty_img = np.zeros_like(cell_raw.data.data_dict['binary'])
 empty_img[:] = np.nan
 
 cp = CellPlot(cell_raw)
-
 cp.imshow('binary', ax=axes[0, 0], cmap='gray_r')
 cp.plot_midline(ax=axes[0, 0])
 cp.plot_outline(ax=axes[0, 0])
@@ -38,7 +36,6 @@ axes[0, 1].axis('off')
 axes[0, 1].plot([0, xmax/2, xmax/2], [ymax/2, ymax/2, 0.65*ymax], color='k', linewidth=1)
 axes[0, 1].arrow(xmax/2, 0.85*ymax, 0, 0.15*ymax - 0.05*ymax, **arrow_kwargs)
 axes[0, 1].text(0.5, 0.25, 'Calculate $r_c$', horizontalalignment='center', verticalalignment='center', transform=axes[0,1].transAxes)
-
 
 cp.imshow(empty_img, ax=axes[1, 0], cmap='gray_r')
 axes[1, 0].axis('off')
@@ -55,11 +52,9 @@ cell_raw.coords.r = r_bk
 cp.imshow(cell_raw.coords.rc, ax=axes[1, 1])
 axes[1, 1].text(0.05, 0.95, 'B', horizontalalignment='left', verticalalignment='top', transform=axes[1, 1].transAxes, fontsize=15)
 
-
 comparison = (cell_raw.coords.rc < cell_raw.coords.r).astype(int) + cell_raw.data.data_dict['binary']
 cp.imshow(comparison, ax=axes[2, 0], cmap='gray_r')
 axes[2, 0].text(0.05, 0.95, 'C', horizontalalignment='left', verticalalignment='top', transform=axes[2, 0].transAxes, fontsize=15)
-
 
 cp.imshow(empty_img, ax=axes[2, 1], cmap='gray_r')
 axes[2, 1].plot([xmax/2, xmax/2], [0, 0.2*ymax], color='k', linewidth=1)
@@ -69,7 +64,6 @@ axes[2, 1].arrow(xmax/2, ymax/2, (-xmax/2) + 0.05*xmax, 0, **arrow_kwargs)
 axes[2, 1].axis('off')
 axes[2, 1].text(0.5, 0.7, 'Thresholding', horizontalalignment='center', verticalalignment='center',
                 transform=axes[2, 1].transAxes)
-
 
 plt.tight_layout()
 

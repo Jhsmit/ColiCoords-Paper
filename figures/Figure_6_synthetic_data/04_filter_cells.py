@@ -51,13 +51,13 @@ def filter_all():
 
     for ph in [10000, 1000, 500]:
         print('Photons', ph)
-        with open(f'matched_names/m_cells_ph_{ph}_match.txt', 'r') as f:
+        with open('matched_names/m_cells_ph_{}_match.txt'.format(ph), 'r') as f:
             m_names = f.readlines()
 
         m_names = list([n.rstrip() for n in m_names])
-        m_cells = load(f'cell_obj/cell_ph_{ph}_raw.hdf5')
+        m_cells = load('cell_obj/cell_ph_{}_raw.hdf5'.format(ph))
 
-        with open(f'matched_names/gt_cells_ph_{ph}_match.txt', 'r') as f:
+        with open('matched_names/gt_cells_ph_{}_match.txt'.format(ph), 'r') as f:
             gt_names = f.readlines()
 
         gt_names = list([n.rstrip() for n in gt_names])
@@ -80,7 +80,7 @@ def filter_all():
             except AssertionError:
                 print('Assertion error:', i)
 
-        save(f'cell_obj/cell_ph_{ph}_filtered.hdf5', m_cells)
+        save('cell_obj/cell_ph_{}_filtered.hdf5'.format(ph), m_cells)
 
 
 if __name__ == '__main__':

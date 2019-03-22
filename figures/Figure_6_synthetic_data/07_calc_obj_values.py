@@ -50,7 +50,7 @@ def get_value_fit(gt_cell, m_cell):
 def get_obj_values_all(data_dir):
     gt_cells = load(os.path.join(data_dir, 'cell_obj', 'cells_final_selected.hdf5'))
 
-    for ph in [1000, 500]:
+    for ph in [10000, 1000, 500]:
         print('Photons', ph)
         m_names = np.genfromtxt(os.path.join(data_dir, 'matched_names', 'm_cells_ph_{}_match_filter.txt'.format(ph)), dtype=str)
         gt_names = np.genfromtxt(os.path.join(data_dir, 'matched_names', 'gt_cells_ph_{}_match_filter.txt'.format(ph)), dtype=str)

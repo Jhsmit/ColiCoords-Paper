@@ -1,19 +1,23 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from colicoords import Cell, load, save, CellPlot, Data
+from colicoords import load, save, CellPlot
 from colicoords.support import running_sum
 import matplotlib.gridspec as gridspec
 from pycorrelate import ucorrelate
 from scipy.ndimage.filters import uniform_filter1d
-
+import os
+import seaborn as sns
 
 upscale = 15
-cell_storm = load(r'D:\_processed_data\2018\20181204_lacy_sr\20181204_cell_10.hdf5')
+reload = False
 
-save('storm_cell.cc', cell_storm)
+if reload:
+    cell_storm = load(r'D:\_processed_data\2018\20181204_lacy_sr\20181204_cell_10.hdf5')
+    save('storm_cell.hdf5', cell_storm)
+else:
+    cell_storm = load('storm_cell.hdf5')
 
 fig_width = 8.53534 / 2.54
-
 fig = plt.figure(figsize=(fig_width, 1.25*2*0.84*3.209210481625255))
 frac_bot = 0.61
 
@@ -47,13 +51,11 @@ for ax in axes.flatten():
 cp = CellPlot(cell_storm)
 cp.imshow('binary', ax=axes[0, 0], cmap='gray_r', alpha=0.3)
 cp.plot_storm(method='gauss', alpha_cutoff=0.3, ax=axes[0, 0], upscale=upscale, interpolation='spline16')
-#cp.plot_storm(method='plot', ax=axes[0, 0], color='b', alpha=0.5, markersize=1)
 cp.plot_outline(ax=axes[0, 0], alpha=0.5)
 cp.plot_midline(ax=axes[0, 0], alpha=0.5)
 axes[0, 0].plot([zx_min, zx_min, zx_max, zx_max, zx_min], [zy_min, zy_max, zy_max, zy_min, zy_min], color='k', linestyle='--')
 
 cp.plot_storm(method='gauss', alpha_cutoff=0.3, ax=axes[0, 1], upscale=upscale, interpolation='spline16')
-#cp.plot_storm(method='plot', ax=axes[0, 1], color='y', alpha=1, markersize=1.5)
 cp.plot_outline(ax=axes[0, 1], alpha=0.5)
 cp.plot_midline(ax=axes[0, 1], alpha=0.5)
 
@@ -103,17 +105,12 @@ G = ucorrelate(y_out, y_out)
 G_m = uniform_filter1d(G, size=200)
 acf = G - G_m
 
-
 #https://stackoverflow.com/questions/11205037/detect-period-of-unknown-source
 fourier = np.fft.fft(acf)/len(acf)
 n = acf.size
 freq = np.fft.fftfreq(n, d=dx)
 
-#axes_bot = [plt.subplot(bot_grid[i]) for i in range(3)]
-
-import seaborn as sns
 sns.set_style('ticks')
-
 ax_loc = plt.subplot(bot_grid[0])
 ax_loc.plot(x_out*(80/1000), y_out)
 ax_loc.set_xlim(0, np.max(x_out)*(80/1000))
@@ -122,20 +119,16 @@ ax_loc.set_xlabel('Distance ($\mu$m)', labelpad=0)
 #axes_bot[0].set_title('Localizations along perimeter')
 ax_loc.set_ylim(0)
 
-
 #Autocorrelation plot
 acf_sub = bot_grid[1].subgridspec(1, 2, wspace=0, width_ratios=[0.2, 0.8])
 acf_axs0 = plt.subplot(acf_sub[0])
 acf_axs1 = plt.subplot(acf_sub[1])
 
-
 acf_axs0.plot(x_out*(80/1000), acf / acf.max())
-#axes_bot[1].set_yticks([0, 1])
 acf_axs0.set_xlim(0, 0.25)
 acf_axs0.set_ylabel('Amplitude')
 
 acf_axs1.plot(x_out*(80/1000), acf / acf.max())
-#axes_bot[1].set_yticks([0, 1])
 acf_axs1.set_xlim(0.25, np.max(x_out)*(80/1000))
 acf_axs1.set_yticks([])
 
@@ -173,9 +166,5 @@ p0 = ax_fft.get_position()
 fig.text(0.0, p0.y0 + p0.height, 'D', fontsize=15)
 fig.align_ylabels([ax_loc, acf_axs0, ax_fft])
 
-#plt.show()
-
-import os
 output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
 plt.savefig(os.path.join(output_folder, 'Figure_5.pdf'), bbox_inches='tight', dpi=1000)
-#

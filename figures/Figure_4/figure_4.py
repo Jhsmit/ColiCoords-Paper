@@ -1,10 +1,5 @@
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
-import numpy as np
 from colicoords import Cell, load, save, CellPlot, Data
-from mpl_toolkits.axes_grid1 import ImageGrid
-from colicoords.support import pad_cell
-import os
 
 cell = load(r'img191c002.hdf5')
 
@@ -28,7 +23,6 @@ if reload:
     cell_flu.optimize('gain50')
     cell_flu.measure_r()
     save('cell_flu.hdf5', cell_flu)
-
 else:
     cell_bin = load('cell_bin.hdf5')
     cell_bf = load('cell_bf.hdf5')
