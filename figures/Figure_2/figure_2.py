@@ -109,7 +109,7 @@ th1 = np.arctan(c.coords.p_dx(c.coords.xr)) * 180 / np.pi
 
 theta2 = c.coords.calc_phi(xp, yp)
 
-arc = Arc((c.coords.xr, c.coords.p(c.coords.xr)), 5, 5, theta1=th1 - 90, theta2=theta2 - 90 + th1, linewidth=0.5)
+arc = Arc((c.coords.xr, c.coords.p(c.coords.xr)), 5, 5, theta1=th1 - 90, theta2=theta2 - 90 + th1, linewidth=0.5, color='k')
 ax0.add_patch(arc)
 
 #Add text labels
@@ -122,11 +122,38 @@ ax0.text(xp_B - 17, yp_B + 7, '$B (x_p, y_p)$', fontsize=10)
 ax0.text(57, 35, '$\phi$', fontsize=10)
 ax0.text(28, 27, '$l_c$', fontsize=10)
 ax0.text(47, 25, '$r_c$', fontsize=10)
+ax0.set_ylabel('$y$', rotation=0, labelpad=10)
+ax0.set_title('$x$')
+plt.tight_layout()
 
+#https://stackoverflow.com/questions/33737736/matplotlib-axis-arrow-tip
+xmin, xmax = ax0.get_xlim()
+ymax, ymin = ax0.get_ylim()
 
+dps = fig.dpi_scale_trans.inverted()
+bbox = ax0.get_window_extent().transformed(dps)
+width, height = bbox.width, bbox.height
+
+# manual arrowhead width and length
+hw = 1. / 20. * (ymax - ymin)
+hl = 1. / 20. * (xmax - xmin)
+lw = 1.  # axis line width
+ohg = 0.4  # arrow overhang
+
+# compute matching arrowhead length and width
+yhw = hw / (ymax - ymin) * (xmax - xmin) * height / width
+yhl = hl / (xmax - xmin) * (ymax - ymin) * width / height
+
+# draw x and y axis
+ax0.arrow(xmin, 0, xmax - xmin, 0., fc='k', ec='k', lw=lw,
+         head_width=hw, head_length=hl, overhang=ohg,
+         length_includes_head=True, clip_on=False)
+
+ax0.arrow(0, ymin, 0., (ymax - ymin), fc='k', ec='k', lw=lw, head_width=hw, head_length=hl, overhang=ohg,
+         length_includes_head=True, clip_on=False)
 
 #Bottom half of the figure
-gs = GridSpec(2, 2, top=0.5)
+gs = GridSpec(2, 2, top=0.6)
 gs_axes = []
 ax1 = fig.add_subplot(gs[0, 0])
 gs_axes.append(ax1)
@@ -142,10 +169,11 @@ for ax in gs_axes + [ax0]:
     ax.tick_params(axis='x', labelbottom=False)
     ax.tick_params(axis='y', labelleft=False)
 
-ax1.set_title('$x_c$')
-ax2.set_title('$l_c$')
-ax3.set_title('$r_c$')
-ax4.set_title('$\phi$')
+lp = 0.98
+ax1.set_title('$x_c$', y=lp)
+ax2.set_title('$l_c$', y=lp)
+ax3.set_title('$r_c$', y=lp)
+ax4.set_title('$\phi$', y=lp)
 
 cp.imshow(c.coords.xc_masked, ax=ax1)
 cp.imshow(c.coords.lc, ax=ax2, vmax=40)
@@ -154,23 +182,25 @@ cp.imshow(c.coords.phi, ax=ax4)
 
 ticks_list = [[20, 40], [0, 20, 40], [0, 10, 20, 30, 40], [0, 60, 120, 180]]
 
+
 def make_cbar(ax, ticks):
     im = [obj for obj in ax.get_children() if isinstance(obj, AxesImage)][0]
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cb = fig.colorbar(im, cax=cax, orientation='vertical', ticks=ticks)
 
+
 for ax, t in zip(gs_axes, ticks_list):
     make_cbar(ax, t)
 
-gs.tight_layout(fig, h_pad=0.01, w_pad=0.01, rect=[None, None, None, 0.6])
-gs0.tight_layout(fig, h_pad=0.01, w_pad=0.01, rect=[None, 0.6, None, None])
+gs.tight_layout(fig, h_pad=0.02, w_pad=0.02, rect=[None, None, None, 0.60])
+gs0.tight_layout(fig, h_pad=0.02, w_pad=0.02, rect=[None, 0.60, None, 0.98])
 
 
 for ax in gs_axes + [ax0]:
     ax.set_rasterization_zorder(1)
 
 plt.show()
-#output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
-#plt.savefig(os.path.join(output_folder, 'Figure_2.pdf'), bbox_inches='tight', dpi=1000)
-#plt.savefig(os.path.join(output_folder, 'Figure_2.pdf'), bbox_inches='tight', dpi=1000
+# output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
+# plt.savefig(os.path.join(output_folder, 'Figure_2.pdf'), bbox_inches='tight', dpi=1000)
+# plt.savefig(os.path.join(output_folder, 'Figure_2.pdf'), bbox_inches='tight', dpi=1000)
