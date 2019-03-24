@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from colicoords import Cell, load, CellPlot, Data
+from colicoords import Cell, load, CellPlot
 import os
 
 cell = load(r'../../data/lacy_selected_cell_3.hdf5')

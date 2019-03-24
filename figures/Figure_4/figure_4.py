@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from colicoords import Cell, load, save, CellPlot, Data
+from colicoords import Cell, load, save, CellPlot
 import os
 
 cell = load(r'img191c002.hdf5')

@@ -1,12 +1,10 @@
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import numpy as np
-from colicoords import Cell, load, save, CellPlot, Data
-from matplotlib_scalebar.scalebar import ScaleBar
+from colicoords import Cell, load, CellPlot
 from matplotlib.patches import Arc
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.image import AxesImage
-from matplotlib import ticker
 import os
 
 

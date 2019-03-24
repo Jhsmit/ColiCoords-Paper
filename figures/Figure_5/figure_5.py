@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from colicoords import load, save, CellPlot
+from colicoords import load, CellPlot
 from colicoords.support import running_sum
 import matplotlib.gridspec as gridspec
 from pycorrelate import ucorrelate
