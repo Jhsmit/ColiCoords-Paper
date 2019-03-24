@@ -42,7 +42,6 @@ def generate_images(cell_list, num_images, cell_per_img, cell_per_img_std, shape
 
 
 def generate_image(cells, shape, max_dist=5):
-
     thetas = 360 * np.random.rand(len(cells))
     data_list = [cell.data.rotate(theta) for cell, theta in zip(cells, thetas)]
     assert all([data.names == data_list[0].names for data in data_list]), 'All cells must have the same data elements'
@@ -68,18 +67,12 @@ def generate_image(cells, shape, max_dist=5):
 
             data_cropped = data[d_min1:d_max1, d_min2:d_max2]
 
-            # # Save uncorrected image positions for STORM data
-            # r_min1 = min1
-            # r_min2 = min2
-
             # Limit image position to the edges of the image
             min1 = np.max([min1, 0])
             max1 = np.min([max1, shape[0]])
             min2 = np.max([min2, 0])
             max2 = np.min([max2, shape[1]])
 
-
-            #
             temp_binary = np.zeros(shape)
             temp_binary[min1:max1, min2:max2] = data_cropped.binary_img
             out_binary = (out_dict['binary'] > 0).astype(int)
@@ -133,44 +126,48 @@ def gen_image_from_storm(storm_table, shape, sigma=1.54, sigma_std=0.3):
     return img
 
 
-def gen_im():
+def gen_im(data_dir):
     """Generate microscopy images from a list of cell objects by placing them randomly oriented in the image."""
-    cell_list = load('cell_obj/cells_final_selected.hdf5')
+    cell_list = load(os.path.join(data_dir, 'cell_obj', 'cells_final_selected.hdf5'))
 
     out_dict = generate_images(cell_list, 1000, 10, 3, (512, 512))
 
-    if not os.path.exists('images'):
-        os.mkdir('images')
+    if not os.path.exists(os.path.join(data_dir, 'images')):
+        os.mkdir(os.path.join(data_dir, 'images'))
 
-    np.save('images/binary.npy', out_dict['binary'])
-    np.save('images/brightfield.npy', out_dict['brightfield'])
-    np.save('images/foci_inner.npy', out_dict['foci_inner'])
-    np.save('images/foci_outer.npy', out_dict['foci_outer'])
-    np.save('images/storm_inner.npy', out_dict['storm_inner'])
-    np.save('images/storm_outer.npy', out_dict['storm_outer'])
+    np.save(os.path.join(data_dir, 'images', 'binary.npy'), out_dict['binary'])
+    np.save(os.path.join(data_dir, 'images', 'brightfield.npy'), out_dict['brightfield'])
+    np.save(os.path.join(data_dir, 'images', 'foci_inner.npy'), out_dict['foci_inner'])
+    np.save(os.path.join(data_dir, 'images', 'foci_outer.npy'), out_dict['foci_outer'])
+    np.save(os.path.join(data_dir, 'images', 'storm_inner.npy'), out_dict['storm_inner'])
+    np.save(os.path.join(data_dir, 'images', 'storm_outer.npy'), out_dict['storm_outer'])
 
-    tifffile.imsave('images/binary.tif', out_dict['binary'])
-    tifffile.imsave('images/brightfield.tif', out_dict['brightfield'])
-    tifffile.imsave('images/foci_inner.tif', out_dict['foci_inner'])
-    tifffile.imsave('images/foci_outer.tif', out_dict['foci_outer'])
-    np.savetxt('images/storm_inner.txt', out_dict['storm_inner'])
-    np.savetxt('images/storm_outer.txt', out_dict['storm_inner'])
+    tifffile.imsave(os.path.join(data_dir, 'images', 'binary.tif'), out_dict['binary'])
+    tifffile.imsave(os.path.join(data_dir, 'images', 'brightfield.tif'), out_dict['brightfield'])
+    tifffile.imsave(os.path.join(data_dir, 'images', 'foci_inner.tif'), out_dict['foci_inner'])
+    tifffile.imsave(os.path.join(data_dir, 'images', 'foci_outer.tif'), out_dict['foci_outer'])
+    np.savetxt(os.path.join(data_dir, 'images', 'storm_inner.txt'), out_dict['storm_inner'])
+    np.savetxt(os.path.join(data_dir, 'images', 'storm_outer.txt'), out_dict['storm_inner'])
 
 
 def load_im():
     return np.load('binary.npy'), np.load('brightfield.npy'), np.load('storm_inner.npy'), np.load('storm_outer.npy')
 
 
-def noise_bf(img_stack):
+def noise_bf(data_dir):
+    """"""
     noise = 20
-    for photons in [200, 300, 500]:
-        ratio = 1.0453 # ratio between no cells and cell wall
+    img_stack = np.load(os.path.join(data_dir, 'images', 'brightfield.npy'))
+    for photons in [10000, 1000, 500]:
+        ratio = 1.0453  # ratio between 'background' (no cells) and cell wall
         img = (photons*(ratio-1))*img_stack + photons
         img = draw_poisson(img)
         img = add_readout_noise(img, noise)
-        tifffile.imsave('bf_noise_{}_photons.tif'.format(photons), img)
-        np.save('bf_noise_{}_photons.npy'.format(photons), img)
+        tifffile.imsave(os.path.join(data_dir, 'images', 'bf_noise_{}_photons.tif'.format(photons)), img)
+        np.save(os.path.join(data_dir, 'images', 'bf_noise_{}_photons.npy'.format(photons), img))
 
 
 if __name__ == '__main__':
-    gen_im()
+    data_dir = r'.'
+    gen_im(data_dir)
+    noise_bf(data_dir)

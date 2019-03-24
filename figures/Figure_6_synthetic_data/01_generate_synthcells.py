@@ -1,6 +1,7 @@
 from colicoords import SynthCellList, save
 import numpy as np
 from tqdm import tqdm
+import os
 
 
 def gen_synthcells(num):
@@ -83,4 +84,6 @@ if __name__ == '__main__':
     cell_list = gen_synthcells(25000)
     # Remove cells with incorrect amount of data elements (missing STORM data)
     b = np.array([len(cell.data.names) == 6 for cell in cell_list])
-    save('cell_obj/cells_final_selected.hdf5', cell_list[b])
+
+    data_dir = r'.'
+    save(os.path.join(data_dir, 'cell_obj' 'cells_final_selected.hdf5'), cell_list[b])

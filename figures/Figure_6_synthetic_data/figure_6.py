@@ -7,7 +7,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import os
 
 
-data_dir = r'D:\Projects\CC_paper\figure_6_v3'
+data_dir = r'.'
 photons = [500, 1000, 10000]
 conditions = ['binary', 'brightfield', 'storm_inner']
 
@@ -35,6 +35,7 @@ def make_colormap(seq):
             cdict['green'].append([item, g1, g2])
             cdict['blue'].append([item, b1, b2])
     return mcolors.LinearSegmentedColormap('CustomMap', cdict)
+
 
 c = mcolors.ColorConverter().to_rgb
 mcm = make_colormap(
@@ -198,5 +199,6 @@ for i, ph in enumerate(photons):
             ax.yaxis.offsetText.set_fontsize(labelsize)
             ax.yaxis.offsetText.set_position((-0.15, 1))
 
-plt.savefig('Figure_6.png', dpi=1000)
-plt.savefig('Figure_6.pdf', dpi=1000)
+
+output_folder = r'.'
+plt.savefig(os.path.join(output_folder, 'Figure_6.pdf'), bbox_inches='tight', dpi=1000)
