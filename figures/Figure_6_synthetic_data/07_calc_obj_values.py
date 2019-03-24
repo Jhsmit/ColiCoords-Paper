@@ -5,10 +5,12 @@ from tqdm.auto import tqdm
 
 
 def cell_to_dict(cell):
+    """returns a dict with parameter name and its value for all parameters describing the coordinate system"""
     return {attr: getattr(cell.coords, attr) for attr in ['a0', 'a1', 'a2', 'r', 'xl', 'xr']}
 
 
 def get_value(gt_cell, m_cell):
+    """Get current STORM optimization objective value"""
     d_m = cell_to_dict(m_cell)
     d_g = cell_to_dict(gt_cell)
 
@@ -23,28 +25,6 @@ def get_value(gt_cell, m_cell):
     val_m = fit_m.fit.objective(**d_m)
 
     return val_m, val_gt
-
-
-def get_value_fit(gt_cell, m_cell):
-    d_m = cell_to_dict(m_cell)
-    d_g = cell_to_dict(gt_cell)
-
-    d_g['r'] /= (1.5554007217841803 * 1.314602664567288)
-    d_m['r'] = d_g['r']
-
-    # copy the cell object because coords values get changed when calling the objective function
-    fit_gt = CellFit(gt_cell.copy(), 'storm_inner')
-    val_gt = fit_gt.fit.objective(**d_g)
-
-    fit_m = CellFit(m_cell.copy(), 'storm_inner')
-    val_m = fit_m.fit.objective(**d_m)
-
-    res = fit_m.fit_parameters('r')
-    d_m['r'] = res.params['r']
-    val_m_new = fit_m.fit.objective(**d_m)
-
-
-    return val_m_new, val_gt
 
 
 def get_obj_values_all(data_dir):
@@ -63,7 +43,7 @@ def get_obj_values_all(data_dir):
             m_index = np.searchsorted(m_cells.name, m_names)
             gt_index = np.searchsorted(gt_cells.name, gt_names)
 
-            # sorting CellList object by indexing; no copying is done.
+            # sorting CellList object by indexing
             m_sorted = m_cells[m_index]
             gt_sorted = gt_cells[gt_index]
 
@@ -72,12 +52,7 @@ def get_obj_values_all(data_dir):
             np.savetxt(os.path.join(data_dir, 'obj_values', 'obj_vals_storm_ph_{}_{}.txt'.format(ph, condition)), result)
             np.save(os.path.join(data_dir, 'obj_values', 'obj_vals_storm_ph_{}_{}.npy'.format(ph, condition)), result)
 
-            # result = np.array([get_value_fit(gt, m) for m, gt in tqdm(zip(m_sorted, gt_sorted), total=len(m_sorted))])
-            #
-            # np.savetxt(os.path.join(data_dir, 'obj_values_new', 'obj_vals_fit_storm_ph_{}_{}.txt'.format(ph, condition)), result)
-            # np.save(os.path.join(data_dir, 'obj_values_new', 'obj_vals_fit_storm_ph_{}_{}.npy'.format(ph, condition)), result)
-
 
 if __name__ == '__main__':
-    data_dir = r'D:\Projects\CC_paper\figure_6_v3'
+    data_dir = r'.'
     get_obj_values_all(data_dir)

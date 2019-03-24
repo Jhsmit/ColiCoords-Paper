@@ -3,6 +3,7 @@ import numpy as np
 
 
 def optimize_all():
+    """Optimize the cell's coordinate systems for each condition based on different data elements"""
     for ph in [10000, 1000, 500]:
         print('Photons {}'.format(ph))
         m_cells = load('cell_obj/cell_ph_{}_filtered.hdf5'.format(ph))

@@ -1,9 +1,10 @@
 import numpy as np
-from colicoords import load, save
+from colicoords import load
 import os
 
 
 def get_r_vals(cell_obj):
+    """Get radial distances for inner and outer membranes for the cell object"""
     r_i = cell_obj.coords.calc_rc(cell_obj.data.data_dict['storm_inner']['x'],
                                   cell_obj.data.data_dict['storm_inner']['y'])
     r_o = cell_obj.coords.calc_rc(cell_obj.data.data_dict['storm_outer']['x'],
@@ -71,5 +72,5 @@ def get_r_vals_all(data_dir):
 
 
 if __name__ == '__main__':
-    data_dir = r'D:\Projects\CC_paper\figure_6_v3'
+    data_dir = r'.'
     get_r_vals_all(data_dir)

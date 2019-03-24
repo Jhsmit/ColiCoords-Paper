@@ -156,31 +156,6 @@ def match_all():
             f.writelines(m_match)
 
 
-def optimize_all():
-    """Optimize the cell's coordinate systems for each conditions based on different data elements"""
-    for ph in [10000, 1000, 500]:
-        print('Photons {}'.format(ph))
-        m_cells = load('cell_obj/m_cells_ph_{}_match_raw.hdf5'.format(ph))
-
-        print('Measured cells loaded')
-
-        print('binary')
-        optimize_cells = m_cells.copy()
-        optimize_cells.optimize_mp()
-        save('cell_obj/m_cells_ph_{}_match_binary.hdf5'.format(ph), optimize_cells)
-
-        print('brightfield')
-        optimize_cells = m_cells.copy()
-        optimize_cells.optimize_mp('brightfield')
-        save('cell_obj/m_cells_ph_{}_match_brightfield.hdf5'.format(ph), optimize_cells)
-
-        print('storm inner')
-        optimize_cells = m_cells.copy()
-        optimize_cells.optimize_mp('storm_inner')
-        save('cell_obj/m_cells_ph_{}_match_storm_inner.hdf5'.format(ph), optimize_cells)
-
-
 if __name__ == '__main__':
     gen_cells()
     match_all()
-    optimize_all()
