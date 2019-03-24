@@ -8,17 +8,12 @@ from scipy.ndimage.filters import uniform_filter1d
 import os
 import seaborn as sns
 
-upscale = 15
-reload = False
+upscale = 15  # pixels upscale factor for SMLM reconstruction
 
-if reload:
-    cell_storm = load(r'D:\_processed_data\2018\20181204_lacy_sr\20181204_cell_10.hdf5')
-    save('storm_cell.hdf5', cell_storm)
-else:
-    cell_storm = load('storm_cell.hdf5')
+cell_storm = load('storm_cell.hdf5')
 
 fig_width = 8.53534 / 2.54
-fig = plt.figure(figsize=(fig_width, 1.25*2*0.84*3.209210481625255))
+fig = plt.figure(figsize=(fig_width, 6.739342011413036))
 frac_bot = 0.61
 
 zx_min = 10
@@ -38,7 +33,6 @@ top_grid.update(bottom=frac_bot)
 
 bot_grid = gridspec.GridSpec(3, 1)
 bot_grid.update(top=frac_bot)
-
 
 axes = np.empty((2,2), dtype=object)
 for index, x in np.ndenumerate(axes):
@@ -72,11 +66,9 @@ cp.plot_outline(ax=axes[1, 0], alpha=0.5)
 cp.plot_midline(ax=axes[1, 0], alpha=0.5)
 axes[1, 0].plot([zx_min, zx_min, zx_max, zx_max, zx_min], [zy_min, zy_max, zy_max, zy_min, zy_min], color='k', linestyle='--')
 
-
 cp.plot_storm(method='gauss', alpha_cutoff=0.3, ax=axes[1, 1], upscale=upscale, interpolation='spline16')
 cp.plot_outline(ax=axes[1, 1], alpha=0.5)
 cp.plot_midline(ax=axes[1, 1], alpha=0.5)
-
 
 axes[1, 1].set_xlim(zx_min, zx_max)
 axes[1, 1].set_ylim(zy_max, zy_min)
@@ -139,8 +131,6 @@ acf_global.set_xlabel('Lag distance ($\mu$m)', labelpad=15)
 acf_global.set_xticks([])
 acf_global.set_yticks([])
 
-
-#axes_bot[2].set_title('Fourier Transform')
 ax_fft = plt.subplot(bot_grid[2])
 ft = np.abs(fourier)[:n//2]
 ft /= ft.max()
@@ -166,5 +156,5 @@ p0 = ax_fft.get_position()
 fig.text(0.0, p0.y0 + p0.height, 'D', fontsize=15)
 fig.align_ylabels([ax_loc, acf_axs0, ax_fft])
 
-output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
+output_folder = r'.'
 plt.savefig(os.path.join(output_folder, 'Figure_5.pdf'), bbox_inches='tight', dpi=1000)
