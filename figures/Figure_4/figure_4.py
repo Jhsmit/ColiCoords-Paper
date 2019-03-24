@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
 from colicoords import Cell, load, save, CellPlot, Data
+import os
 
 cell = load(r'img191c002.hdf5')
 
+# Copy the cells's data elements to a new data instance and create a new initialized Cell
 data = Data()
 for data_elem in cell.data.data_dict.values():
     data.add_data(data_elem, data_elem.dclass, data_elem.name)
@@ -29,7 +31,7 @@ else:
     cell_flu = load('cell_flu.hdf5')
 
 fig_width = 8.53534 / 2.54
-fig, axes = plt.subplots(3, 3, figsize=(fig_width, (3/3)*fig_width))
+fig, axes = plt.subplots(3, 3, figsize=(fig_width, fig_width))
 
 for ax in axes.flatten():
     ax.tick_params(axis='x', labelbottom=False)
@@ -49,6 +51,7 @@ cp = CellPlot(cell_raw)
 cp.imshow('brightfield', ax=axes[1, 0], cmap='gray')
 cp.plot_outline(ax=axes[1, 0], alpha=0.5)
 
+# Reconstruct the image from the coordinate system
 cp.imshow(cell_raw.reconstruct_image('brightfield'), ax=axes[1, 1], cmap='gray')
 
 cp = CellPlot(cell_bf)
@@ -59,6 +62,7 @@ cp = CellPlot(cell_raw)
 cp.imshow('gain50', ax=axes[2, 0])
 cp.plot_outline(ax=axes[2, 0], alpha=0.5)
 
+# Reconstruct the image from the coordinate system
 cp.imshow(cell_raw.reconstruct_image('gain50'), ax=axes[2, 1])
 
 cp = CellPlot(cell_flu)
@@ -83,7 +87,6 @@ axes[0, 0].set_ylabel('Binary')
 axes[1, 0].set_ylabel('Brightfield')
 axes[2, 0].set_ylabel('Fluorescence')
 
-plt.show()
-#output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
-#plt.savefig(os.path.join(output_folder, 'Figure_4.pdf'), bbox_inches='tight')
+output_folder = r'.'
+plt.savefig(os.path.join(output_folder, 'Figure_4.pdf'), bbox_inches='tight', dpi=1000)
 
