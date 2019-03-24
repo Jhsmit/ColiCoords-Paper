@@ -1,6 +1,5 @@
 import numpy as np
-from colicoords import load, save, Data, filter_binaries, data_to_cells, CellPlot, CellListPlot, CellList
-from colicoords.minimizers import DifferentialEvolution
+from colicoords import load, save, Data, filter_binaries, data_to_cells
 import tifffile
 import mahotas as mh
 import re
@@ -24,6 +23,7 @@ def encode_intensity(cells):
 
 
 def match_cells(gt_cells, m_cells, storm_input, filtered_binaries, max_d=3):
+    """For each ground-truth cell find the corresponding 'measured' cell"""
     img_numbers = np.array([int(re.findall(r'(\d+)', cell.name)[0]) for cell in m_cells])
     encoded_gt = encode_intensity(gt_cells)
 
@@ -89,13 +89,44 @@ def match_cells(gt_cells, m_cells, storm_input, filtered_binaries, max_d=3):
     return gt_matched, m_matched
 
 
+def gen_cells():
+    storm_i = np.load('images/storm_inner.npy')
+    storm_o = np.load('images/storm_outer.npy')
+    foci_i = np.load('images/foci_inner.npy')
+    foci_o = np.load('images/foci_outer.npy')
+
+    for ph in [10000, 1000, 500]:
+        print('Photons {}'.format(ph))
+        bin_predicted = tifffile.imread('binary_{}photons_predicted.tif'.format(ph))
+        bf = np.load('bf_noise_{}_photons.npy'.format(ph))
+
+        print('Filtering')
+        filtered_pred = filter_binaries(bin_predicted, min_size=495, max_size=2006.4, min_minor=7.57, max_minor=17.3,
+                                        min_major=15.41, max_major=54.97)
+
+        data = Data()
+        data.add_data(filtered_pred, 'binary')
+        data.add_data(bf, 'brightfield')
+        data.add_data(storm_i, 'storm', 'storm_inner')
+        data.add_data(storm_o, 'storm', 'storm_outer')
+        data.add_data(foci_i, 'fluorescence', 'foci_inner')
+        data.add_data(foci_o, 'fluorescence', 'foci_outer')
+
+        print('Making cells')
+        m_cells = data_to_cells(data, remove_multiple_cells=False, remove_bordering=False)
+
+        print('Saving')
+        save('cell_obj/cell_ph_{}_raw.hdf5'.format(ph), m_cells)
+
+
 def match_all():
+    """For all conditions match all ground-truth cells to measured cells"""
     print('Loading GT')
     gt_cells = load('cells_final_selected.hdf5')
     storm_i = np.load('storm_inner.npy')
 
     for ph in [10000, 1000, 500]:
-        print(f'Photons {ph}')
+        print('Photons {}'.format(ph))
 
         m_cells = load('cell_obj/cell_ph_{}_raw.hdf5'.format(ph))
         print('Measured cells loaded')
@@ -125,245 +156,31 @@ def match_all():
             f.writelines(m_match)
 
 
-
-def gen_cells():
-    storm_i = np.load('storm_inner.npy')
-    storm_o = np.load('storm_outer.npy')
-    foci_i = np.load('foci_inner.npy')
-    foci_o = np.load('foci_outer.npy')
-
-    for ph in [500, 1000, 10000]:
-        print(f'Photons {ph}')
-        bin_predicted = tifffile.imread('binary_{}photons_predicted.tif'.format(ph))
-        bf = np.load('bf_noise_{}_photons.npy'.format(ph))
-
-        print('Filtering')
-        filtered_pred = filter_binaries(bin_predicted, min_size=495, max_size=2006.4, min_minor=7.57, max_minor=17.3,
-                                        min_major=15.41, max_major=54.97)
-
-        data = Data()
-        data.add_data(filtered_pred, 'binary')
-        data.add_data(bf, 'brightfield')
-        data.add_data(storm_i, 'storm', 'storm_inner')
-        data.add_data(storm_o, 'storm', 'storm_outer')
-        data.add_data(foci_i, 'fluorescence', 'foci_inner')
-        data.add_data(foci_o, 'fluorescence', 'foci_outer')
-
-        print('Making cells')
-        m_cells = data_to_cells(data, remove_multiple_cells=False, remove_bordering=False)
-
-        print('Saving')
-        save('cell_obj/cell_ph_{}_raw.hdf5'.format(ph), m_cells)
-
-
 def optimize_all():
-    # for ph in [500]:
-    #     print(f'Photons {ph}')
-    #
-    #     print('Measured cells loaded')
-    #
-    #     print('binary')
-    #     optimize_cells = m_cells.copy()
-    #     optimize_cells.optimize_mp()
-    #     save('cell_obj/m_cells_ph_{}_match_binary.hdf5'.format(ph), optimize_cells)
-    #
-    #     print('brightfield')
-    #     optimize_cells = m_cells.copy()
-    #     optimize_cells.optimize_mp('brightfield')
-    #     save('cell_obj/m_cells_ph_{}_match_brightfield.hdf5'.format(ph), optimize_cells)
-    #
-    #     print('storm inner')
-    #     optimize_cells = m_cells.copy()
-    #     optimize_cells.optimize_mp('storm_inner')
-    #     save('cell_obj/m_cells_ph_{}_match_storm_inner.hdf5'.format(ph), optimize_cells)
-
+    """Optimize the cell's coordinate systems for each conditions based on different data elements"""
     for ph in [10000, 1000, 500]:
-        print(f'Photons {ph}')
+        print('Photons {}'.format(ph))
         m_cells = load('cell_obj/m_cells_ph_{}_match_raw.hdf5'.format(ph))
 
-        print('brightfield DE')
+        print('Measured cells loaded')
+
+        print('binary')
         optimize_cells = m_cells.copy()
-        optimize_cells.optimize_mp('brightfield', minimizer=DifferentialEvolution)
-        save('cell_obj/m_cells_ph_{}_match_brightfield_DE.hdf5'.format(ph), optimize_cells)
+        optimize_cells.optimize_mp()
+        save('cell_obj/m_cells_ph_{}_match_binary.hdf5'.format(ph), optimize_cells)
+
+        print('brightfield')
+        optimize_cells = m_cells.copy()
+        optimize_cells.optimize_mp('brightfield')
+        save('cell_obj/m_cells_ph_{}_match_brightfield.hdf5'.format(ph), optimize_cells)
+
+        print('storm inner')
+        optimize_cells = m_cells.copy()
+        optimize_cells.optimize_mp('storm_inner')
+        save('cell_obj/m_cells_ph_{}_match_storm_inner.hdf5'.format(ph), optimize_cells)
 
 
 if __name__ == '__main__':
+    gen_cells()
     match_all()
-
-    #
-    # binary  = np.load('binary.npy')
-    #
-    # plt.imshow(binary[206])
-    # plt.show()
-    # numbers = np.load('img_number.npy')
-    #
-    # plt.hist(numbers)
-    # plt.show()
-    #
-    # print(np.unique(numbers))
-    # print(206 in numbers)
-    # match_all()
-
-    #gt_cells = load('cells_final_selected.hdf5')
-    #st = np.array([c.data.data_dict['storm_outer']['intensity'] for c in gt_cells])
-    #np.save('storm_int.npy', st)
-
-    # #img_number = np.array([int(re.findall(r'(\d+)', c.name)[0]) for c in gt_cells])
-    # #np.save('img_number.npy', img_number)
-    # img_number = np.load('img_number.npy')
-    # st = np.load('storm_int.npy')
-
-    #encoded = encode_intensity(gt_cells)
-    #np.save('encoded.npy', encoded)
-    #encoded = np.load('encoded.npy')
-    #cells = load('cell_obj/cell_ph_10000_raw.hdf5')
-    # c1 = load('cell_obj/gt_cells_ph_500_match_raw.hdf5')
-    # c2 = load('cell_obj/m_cells_ph_500_match_raw.hdf5')
-    # print(c1[0].data.names)
-    # print([c1[0].data.data_dict[name].dtype for name in c1[0].data.names])
-    # print([c1[0].data.data_dict[name].shape for name in c1[0].data.names])
-    # print(c2[0].data.names)
-    # print([c2[0].data.data_dict[name].dtype for name in c2[0].data.names])
-    # print([c2[0].data.data_dict[name].shape for name in c2[0].data.names])
-    #cell = cells[75]
-    #save('cell75.h5', cell)
-    #cell = load('cells.hdf5')
-
-    # bin_predicted = tifffile.imread('binary_{}photons_predicted.tif'.format(10000))
-    # filtered_pred = filter_binaries(bin_predicted, min_size=495, max_size=2006.4, min_minor=7.57, max_minor=17.3,
-    #                                 min_major=15.41, max_major=54.97)
-    #
-    # np.save('filtered.npy', filtered_pred)
-    # binary = np.load('binary.npy')
-    #
-    # img_n, c_n = (int(n) for n in re.findall(r'(\d+)', c.name))
-    # print(img_n, c_n)
-    #
-    # orig_n = np.int(np.unique(binary[img_n][filtered_pred[img_n] == c_n])[-1])
-    # print(orig_n)
-
-
-    # print(np.unique(binary[1]))
-    # nums = [int(np.max(a)) for a in binary]
-    # cells_chunked = list(chunk_list(cells, nums))
-    #matched_cells.append(cells_chunked[img_n][orig_n - 1])
-
-
-    # cells = load('cell_obj/m_cells_ph_10000_fail_raw.hdf5')
-    # c = cells[0]
-    # c_n = int(re.findall(r'(\d+)', c.name)[0])
-    # print(c_n)
-    # b = img_number == c_n
-    # st_c = c.data.data_dict['storm_outer']['intensity']
-    # print('search')
-    # sums = [np.sum([elem in st_elem for elem in st_c]) for st_elem in st[b]]
-    # print(np.argmax(sums))
-    # print(np.max(sums))
-
-
-    cells = load('cell_obj/m_cells_ph_500_fail1_raw.hdf5')
-  #
-    cell = cells[-1]
-    cp = CellPlot(cell)
-    cp.imshow('binary')
-    cp.plot_storm(data_name='storm_outer', color='g')
-    cp.plot_storm(data_name='storm_inner', color='b')
-    cp.plot_midline()
-    cp.plot_outline()
-    cp.show()
-  #
-  #   # cp.hist_r_storm(data_name='storm_outer', norm_x=False)
-  #   # cp.show()
-  #
-  #   #cell = cells[6]
-  # #  save('cells.hdf5', cell)
-  #
-  #   r_max = 15
-  #
-  #   r = cell.coords.calc_rc(cell.data.data_dict['storm_outer']['x'], cell.data.data_dict['storm_outer']['y'])
-  #   b = r < r_max
-  #
-  #
-  #   print(np.sum([~b]))
-  #
-  #   r = cell.coords.calc_rc(cell.data.data_dict['storm_inner']['x'], cell.data.data_dict['storm_inner']['y'])
-  #   b = r < r_max
-  #
-  #   xs = np.round(cell.data.data_dict['storm_inner']['x']).astype(int)
-  #   ys = np.round(cell.data.data_dict['storm_inner']['y']).astype(int)
-  #
-  #   plt.figure()
-  #   plt.imshow(cell.data.binary_img)
-  #   plt.show()
-  #
-  #   print(np.unique(cell.data.binary_img))
-  #
-  #   pixels = cell.data.binary_img[ys, xs]
-  #   print(pixels.shape)
-  #   print(np.unique(pixels))
-  #
-  #   print('all true', np.all(pixels))
-  #
-  #   print(cell.data.binary_img.shape)
-  #   print(cell.data.binary_img.dtype)
-  #
-  #   print(np.sum([~pixels]))
-  #   val = encode_intensity([cell])
-  #
-  #   print(val)
-  #   print(val[0] in encoded)
-  #   print(np.min(np.abs(val[0] - encoded)))
-  #
-  #   #
-  #   #
-  #   #
-  #   # binary, bf, storm_i, storm_o, bin_pred = load_tempfiles()
-  #   # bin_predicted = tifffile.imread('binary_500photons_predicted.tif')
-  #   # bin_pred = bin_predicted[0:binary.shape[0]]
-  #   #
-  #   # bf = np.load('bf_noise_500_photons.npy')[0:binary.shape[0]]
-  #   #
-  #   # labeled_pred = np.zeros_like(bin_pred, dtype=int)
-  #   # for i, img in enumerate(bin_pred):
-  #   #     labeled_pred[i], n = mh.labeled.label(img)
-  #   # filtered_pred = filter_binaries(labeled_pred, min_size=495, max_size=2006.4, min_minor=7.57, max_minor=17.3,
-  #   #                                 min_major=15.41, max_major=54.97)
-  #   #
-  #   #
-  #   # #
-  #   # # print(np.unique(binary[1]))
-  #   # # nums = [int(np.max(a)) for a in binary]
-  #   # # cells_chunked = list(chunk_list(cells, nums))
-  #   # # print(nums)
-  #   #
-  #   # # fig, axes = plt.subplots(1, 2)
-  #   # # axes[0].imshow(labeled_pred[0])
-  #   # # axes[1].imshow(filtered_pred[0])
-  #   # # plt.show()
-  #   # #
-  #   # fig, axes = plt.subplots(1, 2)
-  #   # axes[0].imshow(binary[0])
-  #   # axes[1].imshow(filtered_pred[0])
-  #   # plt.show()
-  #   #
-  #   # data = Data()
-  #   # data.add_data(filtered_pred, 'binary')
-  #   # data.add_data(bf, 'brightfield')
-  #   # data.add_data(storm_i, 'storm', 'storm_inner')
-  #   # data.add_data(storm_o, 'storm', 'storm_outer')
-  #   # m_cells = data_to_cells(data, remove_multiple_cells=False, remove_bordering=False)
-  #   #
-  #   # gt_matched, m_matched = match_cells(gt_cells, m_cells)
-  #   #
-  #   #
-  #   #
-  #   #
-  #   # # matched_cells = []
-  #   # # for c in cells_r[:20]:
-  #   # #     img_n, c_n = (int(n) for n in re.findall(r'(\d+)', c.name))
-  #   # #     print(img_n, c_n)
-  #   # #
-  #   # #     orig_n = np.int(np.unique(binary[img_n][filtered_pred[img_n] == c_n])[-1])
-  #   # #     print(orig_n)
-  #   # #
-  #   # #     matched_cells.append(cells_chunked[img_n][orig_n - 1])
+    optimize_all()

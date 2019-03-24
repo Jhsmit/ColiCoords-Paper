@@ -6,7 +6,7 @@ from scipy.cluster.hierarchy import fcluster
 
 
 def filter_cells(m_names, gt_names, m_cells, gt_cells, max_d=3):
-    """Corrects cells with too many STORM localizations and removes cells with too few"""
+    """Removes STORM localizations from neighbouring cells and removes cell objects with too few for all conditions."""
 
     m_remove = []
     gt_remove = []
@@ -47,6 +47,7 @@ def filter_cells(m_names, gt_names, m_cells, gt_cells, max_d=3):
 
 
 def filter_all():
+    """Removes STORM localizations from neighbouring cells and removes cell objects with too few for all conditions."""
     gt_cells = load('cell_obj/cells_final_selected.hdf5')
 
     for ph in [10000, 1000, 500]:

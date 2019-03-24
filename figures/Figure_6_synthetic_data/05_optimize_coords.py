@@ -4,7 +4,7 @@ import numpy as np
 
 def optimize_all():
     for ph in [10000, 1000, 500]:
-        print(f'Photons {ph}')
+        print('Photons {}'.format(ph))
         m_cells = load('cell_obj/cell_ph_{}_filtered.hdf5'.format(ph))
 
         print('Measured cells loaded')

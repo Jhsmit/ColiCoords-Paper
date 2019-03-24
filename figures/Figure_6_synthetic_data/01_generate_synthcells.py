@@ -1,19 +1,14 @@
-from colicoords import SynthCellList, save, load, CellPlot
-from colicoords.models import PSF, RDistModel, Memory
-from colicoords.synthetic_data import draw_poisson, add_readout_noise
-import matplotlib.pyplot as plt
+from colicoords import SynthCellList, save
 import numpy as np
-import mahotas as mh
 from tqdm import tqdm
-import time
+
 
 def gen_synthcells(num):
     """Generates a list of synthetic cells"""
-    #todo check numbers on l, r, curvature from real data
     lengths = np.random.normal(40, 7.5, num)
-    bf_r = 6.245765530522576 # radius measured from brightfield r_dist
+    bf_r = 6.245765530522576  # radius measured from brightfield r_dist
     r_factor = 1.5554007217841803  # Conversion from brightfield radius to binary radius (2018101)
-    inner_membrane_factor = 1.314602664567288 # Conversion from brightfield radius to inner membrane radius (20181204)
+    inner_membrane_factor = 1.314602664567288  # Conversion from brightfield radius to inner membrane radius (20181204)
     radii = np.random.normal(bf_r, 0.4, num) * r_factor
     curvatures = np.random.normal(0, 0.0075, num)
 
@@ -55,6 +50,7 @@ def gen_synthcells(num):
 
 
 def yield_bf():
+    """Returns a random radial distribution curve from measured brightfield images, repeats after exhausting list"""
     y_arr = np.loadtxt('r_dist_cells_yvals_final.txt')
 
     while True:
@@ -84,9 +80,7 @@ def measure_r(file_path):
 
 
 if __name__ == '__main__':
-
     cell_list = gen_synthcells(25000)
-
-    # Remove cells with incorrect amount of data elements (misisng STORM data)
+    # Remove cells with incorrect amount of data elements (missing STORM data)
     b = np.array([len(cell.data.names) == 6 for cell in cell_list])
     save('cell_obj/cells_final_selected.hdf5', cell_list[b])

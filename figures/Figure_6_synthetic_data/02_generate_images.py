@@ -2,7 +2,6 @@ from colicoords.synthetic_data import add_readout_noise, draw_poisson
 from colicoords import load
 import numpy as np
 import mahotas as mh
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 import os
 import tifffile
@@ -27,7 +26,7 @@ def generate_images(cell_list, num_images, cell_per_img, cell_per_img_std, shape
     for i, d in enumerate(dicts):
         for k, v in d.items():
             if 'storm' in k:
-                v['frame'] = i + 1 #TODO FIX THIS STUPID BUG
+                v['frame'] = i + 1
                 if k in out_dict:
                     out_dict[k] = np.append(out_dict[k], v)
                 else:
@@ -106,7 +105,7 @@ def generate_image(cells, shape, max_dist=5):
                     out_dict[name] = data_out
 
                 continue
-            elif data_elem.dclass =='binary':
+            elif data_elem.dclass == 'binary':
                 out_dict[name][min1:max1, min2:max2] += ((i+1)*data_elem)
             else:
                 out_dict[name][min1:max1, min2:max2] += data_elem
@@ -135,6 +134,7 @@ def gen_image_from_storm(storm_table, shape, sigma=1.54, sigma_std=0.3):
 
 
 def gen_im():
+    """Generate microscopy images from a list of cell objects by placing them randomly oriented in the image."""
     cell_list = load('cell_obj/cells_final_selected.hdf5')
 
     out_dict = generate_images(cell_list, 1000, 10, 3, (512, 512))
@@ -173,75 +173,4 @@ def noise_bf(img_stack):
 
 
 if __name__ == '__main__':
-#    gen_im()
-    bf = np.load('bf_noise_500_photons.npy')
-    #noise_bf(bf)
-    plt.imshow(bf[0])
-    plt.show()
-
-
-    #oise_bf(bf)
-
-
-    #cell_list = load('temp_cells.hdf5')
-    # binary, brightfield, storm, storm2 = load_im()
-    # print(binary.shape)
-    # print(len(storm))
-    #
-    # plt.imshow(binary[0], cmap='gray')
-    # print(len(storm['x'][storm['frame'] == 1]))
-    # plt.plot(storm['x'][storm['frame'] == 1], storm['y'][storm['frame'] == 1])
-    # plt.show()
-    #
-    # fig, axes = plt.subplots(3,3)
-    # for a, c in zip(axes.flatten(), brightfield):
-    #     a.imshow(c, cmap='gray')
-    #
-    # plt.tight_layout()
-    # plt.show()
-    #
-    # photons = 10000
-    # noise = 20
-    # ratio = 33000 / 31032  # ratio between no cells and cell wall
-    # img = brightfield[0]
-    # img = (photons*(ratio-1))*img + photons
-    # print(img.max())
-    # img = draw_poisson(img)
-    # img = add_readout_noise(img, noise)
-    #
-    # plt.imshow(img, cmap='gray')
-    # plt.show()
-    # print('moments', [moment(img, moment=n + 1, axis=None) for n in range(5)])
-    # print(np.mean(img))
-    # print(np.std(img))
-    #
-
-
-    # img = brightfield[0]
-    # print(img.min(), img.max())
-    #
-    # img = (33000 - 31032)*img + 31032
-    # img = add_readout_noise(img, 20)
-    # print(img.min(), img.max())
-    #
-    # # plt.figure()
-    # # plt.imshow(img)
-    # # plt.show()
-    #
-    # img_ph = img / 0.3682782513636919
-    # poisson = draw_poisson(img_ph)
-    #
-    # plt.figure()
-    # plt.imshow(poisson)
-    # plt.show()
-    #
-    # final = poisson * 0.3682782513636919
-    # final /= final.mean()
-    #
-    # print('poisson moments', [moment(final, moment=n + 1, axis=None) for n in range(5)])
-    #
-    # print(np.mean(final))
-    # print(np.std(final))
-
-# black: 30000
-# white: 33000
+    gen_im()
