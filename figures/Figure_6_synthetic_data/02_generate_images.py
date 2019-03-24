@@ -150,10 +150,6 @@ def gen_im(data_dir):
     np.savetxt(os.path.join(data_dir, 'images', 'storm_outer.txt'), out_dict['storm_inner'])
 
 
-def load_im():
-    return np.load('binary.npy'), np.load('brightfield.npy'), np.load('storm_inner.npy'), np.load('storm_outer.npy')
-
-
 def noise_bf(data_dir):
     """add poissonian and readout noise to brightfield images"""
     noise = 20
