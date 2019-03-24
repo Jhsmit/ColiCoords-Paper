@@ -3,14 +3,10 @@ from colicoords import Cell, load, save, CellPlot, Data
 import os
 
 cell = load(r'img191c002.hdf5')
-
-# Copy the cells's data elements to a new data instance and create a new initialized Cell
-data = Data()
-for data_elem in cell.data.data_dict.values():
-    data.add_data(data_elem, data_elem.dclass, data_elem.name)
+data = cell.data.copy()
 cell_raw = Cell(data[:, 1:-1])
-reload = False
 
+reload = False
 if reload:
     cell_bin = cell_raw.copy()
     cell_bin.optimize()

@@ -18,10 +18,7 @@ def calc_dx_dy(cell, x):
 
 
 cell = load(r'../../data/lacy_selected_cell_3.hdf5')
-data = Data()
-
-for data_elem in cell.data.data_dict.values():
-    data.add_data(data_elem, data_elem.dclass, data_elem.name)
+data = cell.data.copy()
 c = Cell(data)
 c.optimize('brightfield')
 

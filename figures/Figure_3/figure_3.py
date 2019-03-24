@@ -1,15 +1,10 @@
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
 import numpy as np
-from colicoords import Cell, load, save, CellPlot, Data
-from mpl_toolkits.axes_grid1 import ImageGrid
+from colicoords import Cell, load, CellPlot, Data
 import os
 
 cell = load(r'../../data/lacy_selected_cell_3.hdf5')
-data = Data()
-
-for data_elem in cell.data.data_dict.values():
-    data.add_data(data_elem, data_elem.dclass, data_elem.name)
+data = cell.data.copy()
 cell_raw = Cell(data)
 
 fig_width = 8.53534 / 2.54
