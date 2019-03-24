@@ -64,7 +64,6 @@ dy = yp - yc
 ax0.arrow(xp - dx, yp - dy, dx, dy, color='k',
           head_width=2, head_length=3, length_includes_head=True, lw=0, overhang=0.2)
 
-
 #length coordinate
 l_x = np.linspace(c.coords.xl, xc, 100, endpoint=True)
 l_y = c.coords.p(l_x) - 2
@@ -146,11 +145,11 @@ yhl = hl / (xmax - xmin) * (ymax - ymin) * width / height
 
 # draw x and y axis
 ax0.arrow(xmin, 0, xmax - xmin, 0., fc='k', ec='k', lw=lw,
-         head_width=hw, head_length=hl, overhang=ohg,
-         length_includes_head=True, clip_on=False)
+          head_width=hw, head_length=hl, overhang=ohg,
+          length_includes_head=True, clip_on=False)
 
 ax0.arrow(0, ymin, 0., (ymax - ymin), fc='k', ec='k', lw=lw, head_width=hw, head_length=hl, overhang=ohg,
-         length_includes_head=True, clip_on=False)
+          length_includes_head=True, clip_on=False)
 
 #Bottom half of the figure
 gs = GridSpec(2, 2, top=0.6)
@@ -180,8 +179,6 @@ cp.imshow(c.coords.lc, ax=ax2, vmax=40)
 cp.imshow(c.coords.rc, ax=ax3, vmin=0, vmax=40)
 cp.imshow(c.coords.phi, ax=ax4)
 
-ticks_list = [[20, 40], [0, 20, 40], [0, 10, 20, 30, 40], [0, 60, 120, 180]]
-
 
 def make_cbar(ax, ticks):
     im = [obj for obj in ax.get_children() if isinstance(obj, AxesImage)][0]
@@ -190,6 +187,7 @@ def make_cbar(ax, ticks):
     cb = fig.colorbar(im, cax=cax, orientation='vertical', ticks=ticks)
 
 
+ticks_list = [[20, 40], [0, 20, 40], [0, 10, 20, 30, 40], [0, 60, 120, 180]]
 for ax, t in zip(gs_axes, ticks_list):
     make_cbar(ax, t)
 
@@ -200,7 +198,5 @@ gs0.tight_layout(fig, h_pad=0.02, w_pad=0.02, rect=[None, 0.60, None, 0.98])
 for ax in gs_axes + [ax0]:
     ax.set_rasterization_zorder(1)
 
-plt.show()
-# output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
-# plt.savefig(os.path.join(output_folder, 'Figure_2.pdf'), bbox_inches='tight', dpi=1000)
-# plt.savefig(os.path.join(output_folder, 'Figure_2.pdf'), bbox_inches='tight', dpi=1000)
+output_folder = r'.'
+plt.savefig(os.path.join(output_folder, 'Figure_2.pdf'), bbox_inches='tight', dpi=1000)
