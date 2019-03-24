@@ -67,6 +67,6 @@ axes[2, 1].text(0.5, 0.7, 'Thresholding', horizontalalignment='center', vertical
 
 plt.tight_layout()
 
-#plt.show()
-output_folder = r'C:\Users\Smit\MM\Projects\05_Live_cells\manuscripts\ColiCoords\tex\Figures'
+
+output_folder = r'.'
 plt.savefig(os.path.join(output_folder, 'Figure_3.pdf'), bbox_inches='tight', dpi=1000)
