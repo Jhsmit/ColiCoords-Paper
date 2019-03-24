@@ -155,7 +155,7 @@ def load_im():
 
 
 def noise_bf(data_dir):
-    """"""
+    """add poissonian and readout noise to brightfield images"""
     noise = 20
     img_stack = np.load(os.path.join(data_dir, 'images', 'brightfield.npy'))
     for photons in [10000, 1000, 500]:
