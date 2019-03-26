@@ -10,6 +10,7 @@ import seaborn as sns
 
 upscale = 15  # pixels upscale factor for SMLM reconstruction
 
+# 20181204_lacy_sr\20181204_cell_10.hdf5
 cell_storm = load('storm_cell.hdf5')
 
 fig_width = 8.53534 / 2.54
