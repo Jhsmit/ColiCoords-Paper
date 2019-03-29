@@ -26,7 +26,7 @@ c.data.add_data(reconstructed_bf, 'brightfield', 'sim_bf')
 
 cp = CellPlot(c)
 fig_width = 8.53534 / 2.54
-fig = plt.figure(figsize=(fig_width, 5))
+fig = plt.figure(figsize=(fig_width, 5.5))
 gs0 = GridSpec(1, 1)
 
 ax0 = fig.add_subplot(gs0[0])
