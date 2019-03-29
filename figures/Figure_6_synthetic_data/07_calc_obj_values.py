@@ -55,4 +55,6 @@ def get_obj_values_all(data_dir):
 
 if __name__ == '__main__':
     data_dir = r'.'
+    if not os.path.exists(os.path.join(data_dir, 'obj_values')):
+        os.mkdir(os.path.join(data_dir, 'obj_values'))
     get_obj_values_all(data_dir)

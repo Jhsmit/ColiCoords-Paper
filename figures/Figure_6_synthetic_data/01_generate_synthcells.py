@@ -81,9 +81,12 @@ def measure_r(file_path):
 
 
 if __name__ == '__main__':
+    np.random.seed(42)
     cell_list = gen_synthcells(25000)
     # Remove cells with incorrect amount of data elements (missing STORM data)
     b = np.array([len(cell.data.names) == 6 for cell in cell_list])
 
     data_dir = r'.'
-    save(os.path.join(data_dir, 'cell_obj' 'cells_final_selected.hdf5'), cell_list[b])
+    if not os.path.exists(os.path.join(data_dir, 'cell_obj')):
+        os.mkdir(os.path.join(data_dir, 'cell_obj'))
+    save(os.path.join(data_dir, 'cell_obj', 'cells_final_selected.hdf5'), cell_list[b])

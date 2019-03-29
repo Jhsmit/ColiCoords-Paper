@@ -6,7 +6,7 @@ import re
 from tqdm.auto import tqdm
 import fastcluster as fc
 from scipy.cluster.hierarchy import fcluster
-
+import os
 
 def encode(arr):
     encode_arr = (200 * np.arange(len(arr)) + 1) ** 2
@@ -89,16 +89,16 @@ def match_cells(gt_cells, m_cells, storm_input, filtered_binaries, max_d=3):
     return gt_matched, m_matched
 
 
-def gen_cells():
-    storm_i = np.load('images/storm_inner.npy')
-    storm_o = np.load('images/storm_outer.npy')
-    foci_i = np.load('images/foci_inner.npy')
-    foci_o = np.load('images/foci_outer.npy')
+def gen_cells(data_dir):
+    storm_i = np.load(os.path.join(data_dir, 'images', 'storm_inner.npy'))
+    storm_o = np.load(os.path.join(data_dir, 'images', 'storm_outer.npy'))
+    foci_i = np.load(os.path.join(data_dir, 'images', 'foci_inner.npy'))
+    foci_o = np.load(os.path.join(data_dir, 'images', 'foci_outer.npy'))
 
     for ph in [10000, 1000, 500]:
         print('Photons {}'.format(ph))
-        bin_predicted = tifffile.imread('binary_{}photons_predicted.tif'.format(ph))
-        bf = np.load('bf_noise_{}_photons.npy'.format(ph))
+        bin_predicted = tifffile.imread(os.path.join(data_dir, 'images', 'binary_{}photons_predicted.tif'.format(ph)))
+        bf = np.load(os.path.join(data_dir, 'images', 'bf_noise_{}_photons.npy'.format(ph)))
 
         print('Filtering')
         filtered_pred = filter_binaries(bin_predicted, min_size=495, max_size=2006.4, min_minor=7.57, max_minor=17.3,
@@ -116,22 +116,22 @@ def gen_cells():
         m_cells = data_to_cells(data, remove_multiple_cells=False, remove_bordering=False)
 
         print('Saving')
-        save('cell_obj/cell_ph_{}_raw.hdf5'.format(ph), m_cells)
+        save(os.path.join(data_dir, 'cell_obj', 'cell_ph_{}_raw.hdf5'.format(ph)), m_cells)
 
 
-def match_all():
+def match_all(data_dir):
     """For all conditions match all ground-truth cells to measured cells"""
     print('Loading GT')
-    gt_cells = load('cells_final_selected.hdf5')
-    storm_i = np.load('storm_inner.npy')
+    gt_cells = load(os.path.join(data_dir, 'cell_obj', 'cells_final_selected.hdf5'))
+    storm_i = np.load(os.path.join(data_dir, 'images', 'storm_inner.npy'))
 
     for ph in [10000, 1000, 500]:
         print('Photons {}'.format(ph))
 
-        m_cells = load('cell_obj/cell_ph_{}_raw.hdf5'.format(ph))
+        m_cells = load(os.path.join(data_dir, 'cell_obj', 'cell_ph_{}_raw.hdf5'.format(ph)))
         print('Measured cells loaded')
 
-        bin_predicted = tifffile.imread('binary_{}photons_predicted.tif'.format(ph))
+        bin_predicted = tifffile.imread(os.path.join(data_dir, 'images', 'binary_{}photons_predicted.tif'.format(ph)))
         print('Filtering')
         filtered_pred = filter_binaries(bin_predicted, min_size=495, max_size=2006.4, min_minor=7.57, max_minor=17.3,
                                         min_major=15.41, max_major=54.97)
@@ -149,13 +149,16 @@ def match_all():
             except AssertionError:
                 print('Assertion error:', i)
 
-        with open('matched_names/gt_cells_ph_{}_match.txt'.format(ph), 'w') as f:
+        with open(os.path.join(data_dir, 'matched_names', 'gt_cells_ph_{}_match.txt'.format(ph)), 'w') as f:
             f.writelines(gt_match)
 
-        with open('matched_names/m_cells_ph_{}_match.txt'.format(ph), 'w') as f:
+        with open(os.path.join(data_dir, 'matched_names', 'm_cells_ph_{}_match.txt'.format(ph)), 'w') as f:
             f.writelines(m_match)
 
 
 if __name__ == '__main__':
-    gen_cells()
-    match_all()
+    data_dir = '.'
+    if not os.path.exists(os.path.join(data_dir, 'matched_names')):
+        os.mkdir(os.path.join(data_dir, 'matched_names'))
+    gen_cells(data_dir)
+    match_all(data_dir)

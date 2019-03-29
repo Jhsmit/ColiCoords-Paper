@@ -3,6 +3,7 @@ from tqdm.auto import tqdm
 import numpy as np
 import fastcluster as fc
 from scipy.cluster.hierarchy import fcluster
+import os
 
 
 def filter_cells(m_names, gt_names, m_cells, gt_cells, max_d=3):
@@ -46,29 +47,29 @@ def filter_cells(m_names, gt_names, m_cells, gt_cells, max_d=3):
     return m_final, gt_final, m_cells, gt_cells
 
 
-def filter_all():
+def filter_all(data_dir):
     """Removes STORM localizations from neighbouring cells and removes cell objects with too few for all conditions."""
-    gt_cells = load('cell_obj/cells_final_selected.hdf5')
+    gt_cells = load(os.path.join(data_dir, 'cell_obj', 'cells_final_selected.hdf5'))
 
     for ph in [10000, 1000, 500]:
         print('Photons', ph)
-        with open('matched_names/m_cells_ph_{}_match.txt'.format(ph), 'r') as f:
+        with open(os.path.join(data_dir, 'matched_names', 'm_cells_ph_{}_match.txt'.format(ph)), 'r') as f:
             m_names = f.readlines()
 
         m_names = list([n.rstrip() for n in m_names])
-        m_cells = load('cell_obj/cell_ph_{}_raw.hdf5'.format(ph))
+        m_cells = load(os.path.join(data_dir, 'cell_obj', 'cell_ph_{}_raw.hdf5'.format(ph)))
 
-        with open('matched_names/gt_cells_ph_{}_match.txt'.format(ph), 'r') as f:
+        with open(os.path.join(data_dir, 'matched_names', 'gt_cells_ph_{}_match.txt'.format(ph)), 'r') as f:
             gt_names = f.readlines()
 
         gt_names = list([n.rstrip() for n in gt_names])
 
         m_final, gt_final, m_cells, gt_cells = filter_cells(m_names, gt_names, m_cells, gt_cells)
 
-        with open('matched_names/gt_cells_ph_{}_match_filter.txt'.format(ph), 'w') as f:
+        with open(os.path.join(data_dir, 'matched_names', 'gt_cells_ph_{}_match_filter.txt'.format(ph)), 'w') as f:
             f.writelines(gt_final)
 
-        with open('matched_names/m_cells_ph_{}_match_filter.txt'.format(ph), 'w') as f:
+        with open(os.path.join(data_dir, 'matched_names', 'm_cells_ph_{}_match_filter.txt'.format(ph)), 'w') as f:
             f.writelines(m_final)
 
         for i, (m_, gt_) in tqdm(enumerate(zip(m_final, gt_final))):
@@ -81,8 +82,9 @@ def filter_all():
             except AssertionError:
                 print('Assertion error:', i)
 
-        save('cell_obj/cell_ph_{}_filtered.hdf5'.format(ph), m_cells)
+        save(os.path.join(data_dir, 'cell_obj', 'cell_ph_{}_filtered.hdf5'.format(ph)), m_cells)
 
 
 if __name__ == '__main__':
-    filter_all()
+    data_dir = '.'
+    filter_all(data_dir)

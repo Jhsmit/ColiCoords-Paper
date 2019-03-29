@@ -73,4 +73,6 @@ def get_r_vals_all(data_dir):
 
 if __name__ == '__main__':
     data_dir = r'.'
+    if not os.path.exists(os.path.join(data_dir, 'r_values')):
+        os.mkdir(os.path.join(data_dir, 'r_values'))
     get_r_vals_all(data_dir)

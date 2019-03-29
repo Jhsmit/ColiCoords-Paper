@@ -1,18 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from colicoords import load, CellPlot
+from colicoords import load, CellPlot, save
+from colicoords.support import pad_cell
 import matplotlib.colors as mcolors
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import os
+import seaborn as sns
 
+sns.set_style('ticks')
 
 data_dir = r'.'
+if not os.path.exists(os.path.join(data_dir, 'plot_vars')):
+    os.mkdir(os.path.join(data_dir, 'plot_vars'))
 photons = [500, 1000, 10000]
 conditions = ['binary', 'brightfield', 'storm_inner']
 
 labelsize = 7.5
-upscale = 10  # STORM render resolution
+upscale = 20  # STORM render resolution
 step = 1  # fraction of points plotted in histogram
 linewidth = 0.5
 
@@ -39,7 +44,7 @@ def make_colormap(seq):
 
 c = mcolors.ColorConverter().to_rgb
 mcm = make_colormap(
-    [ c('black'), c('magenta')])
+    [c('black'), c('magenta')])
 ccm = make_colormap(
     [c('black'), c('cyan')])
 
@@ -52,17 +57,21 @@ def prune(arr):
     return arr[~np.isnan(arr)]
 
 
-cell_dict = {}
-for ph in photons:
-    cell_dict[ph] = {}
-    for condition in conditions:
-        cell_dict[ph][condition] = load(os.path.join(data_dir, 'plot_vars', 'cells_{}_{}_photons.hdf5'.format(condition, ph)))
-
 if reload:
     for ph in photons:
         im = np.load(os.path.join(data_dir, 'images', 'bf_noise_{}_photons.npy'.format(ph)))
         np.save(os.path.join(data_dir, 'plot_vars', 'bf_noise_{}_photons.npy'.format(ph)), im[0])
 
+        for condition in conditions:
+            cells = load(os.path.join(data_dir, 'cell_obj', 'm_cells_ph_{}_filtered_{}.hdf5'.format(ph, condition)))
+            save(os.path.join(data_dir, 'plot_vars', 'cells_{}_{}_photons.hdf5'.format(condition, ph)), cells[:50])
+
+
+cell_dict = {}
+for ph in photons:
+    cell_dict[ph] = {}
+    for condition in conditions:
+        cell_dict[ph][condition] = load(os.path.join(data_dir, 'plot_vars', 'cells_{}_{}_photons.hdf5'.format(condition, ph)))
 
 imgs = {ph: np.load(os.path.join(data_dir, 'plot_vars', 'bf_noise_{}_photons.npy'.format(ph))) for ph in photons}
 
@@ -97,7 +106,7 @@ def make_obj_hist(ax, values, step=1):
     axins.hist(values[::step], bins=bins_log, color='#333333', linewidth=0)
     axins.set_xscale('log')
     axins.axvline(1, color='r', linewidth=linewidth, zorder=-1)
-    axins.tick_params(direction='out', labelsize=labelsize)
+    axins.tick_params(direction='out', labelsize=labelsize, pad=0)
     axins.ticklabel_format(axis='y', style='sci', scilimits=(0, 0), useMathText=True)
     axins.set_xlim(8e-1, 1000)
     axins.yaxis.offsetText.set_fontsize(labelsize)
@@ -107,6 +116,13 @@ def make_obj_hist(ax, values, step=1):
 fig = plt.figure(figsize=(10, 17.8 / 2.54))
 outer_grid = gridspec.GridSpec(2, 3, wspace=0.1, hspace=0.15, height_ratios=[0.5, 1])
 outer_grid.update(left=0.05, right=0.98, top=0.965)
+
+ci = 0  # Cell index
+shapes = np.array([cell_dict[ph]['binary'][ci].data.shape for ph in photons])
+
+max_shape = (shapes.T[0].max(), shapes.T[1].max())
+
+
 for i, ph in enumerate(photons):
     inner_grid = gridspec.GridSpecFromSubplotSpec(3, 2, width_ratios=[1, 0.45],
                                                   subplot_spec=outer_grid[0, i], wspace=0.0, hspace=0.)
@@ -116,32 +132,39 @@ for i, ph in enumerate(photons):
     ax1.set_anchor('W')
     ax1.set_title('{} Photons'.format(ph), fontsize=10)
 
-    ci = 0
+    if ph == 500:
+        p0 = ax1.get_position()
+        fig.text(0.0, p0.y0 + p0.height, 'A', fontsize=15)
+
     linewidth = 0.5
     alpha = 0.5
 
     ax2 = plt.subplot(inner_grid[0, -1])
     ax2.set_anchor('NE')
-    cp = CellPlot(cell_dict[ph]['binary'][ci])
+    ax2.set_title('Binary', fontsize=labelsize)
+    cp = CellPlot(pad_cell(cell_dict[ph]['binary'][ci], max_shape))
     cp.imshow("binary", ax=ax2)
     cp.plot_outline(ax=ax2, linewidth=linewidth, alpha=alpha)
 
     ax3 = plt.subplot(inner_grid[1, -1])
     ax3.set_anchor('E')
-    cp = CellPlot(cell_dict[ph]['brightfield'][ci])
+    ax3.set_title('Brightfield', fontsize=labelsize)
+    cp = CellPlot(pad_cell(cell_dict[ph]['brightfield'][ci], max_shape))
     cp.imshow("brightfield", ax=ax3)
     cp.plot_outline(ax=ax3, linewidth=linewidth, alpha=alpha)
 
     ax4 = plt.subplot(inner_grid[2, -1])
     ax4.set_anchor('SE')
-    cp = CellPlot(cell_dict[ph]['storm_inner'][ci])
+    ax4.set_title('STORM', fontsize=labelsize)
+    cp = CellPlot(pad_cell(cell_dict[ph]['storm_inner'][ci], max_shape))
     cp.imshow(np.zeros(cp.cell_obj.data.shape), cmap='gray')  # Black background
     cp.plot_storm(data_name='storm_inner', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=ccm)
     cp.plot_storm(data_name='storm_outer', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=mcm)
-    cp.plot_outline(ax=ax4, linewidth=linewidth, alpha=alpha)
-    plt.tight_layout()
+    cp.plot_outline(ax=ax4, linewidth=linewidth, alpha=alpha, color='w')
 
-    plt.subplots_adjust(left=0, right=1, wspace=0)
+    plt.tight_layout(fig)
+
+   # plt.subplots_adjust(left=0, right=1, wspace=0)
 
     for ax in [ax1, ax2, ax3, ax4]:
         ax.set_xticks([])
@@ -166,9 +189,21 @@ for i, ph in enumerate(photons):
             ax.yaxis.offsetText.set_fontsize(labelsize)
             ax.yaxis.offsetText.set_position((-0.15, 1))
 
+            r_m = r_m_inner #np..concatenate((r_m_inner, r_m_outer))
+            r_g = r_gt_inner #np.concatenate((r_gt_inner, r_gt_outer))
+
+            d_linear = np.mean(np.abs(r_m - r_g))
+            d_sq = np.sqrt(np.mean((r_m - r_g) ** 2))
+
+            ax.text(0.95, 0.85, '$D: {:.2f}$\n$D^2: {:.2f}$'.format(d_linear, d_sq), horizontalalignment='right',
+                verticalalignment='center', transform=ax.transAxes, fontsize=labelsize)
+
             if ph == 500:
                 labels = ['Binary', 'Brightfield', 'STORM']
                 ax.set_ylabel(labels[j])
+                if j == 0:
+                    p0 = ax.get_position()
+                    fig.text(0.0, p0.y0 + p0.height, 'B', fontsize=15)
             if j == 0:
                 ax.set_title('STORM localizations', fontsize=labelsize)
             if j < 2:
@@ -199,6 +234,5 @@ for i, ph in enumerate(photons):
             ax.yaxis.offsetText.set_fontsize(labelsize)
             ax.yaxis.offsetText.set_position((-0.15, 1))
 
-
 output_folder = r'.'
-plt.savefig(os.path.join(output_folder, 'Figure_6.pdf'), bbox_inches='tight', dpi=1000)
+plt.savefig(os.path.join(output_folder, 'Figure_6a.pdf'), bbox_inches='tight', dpi=1000)

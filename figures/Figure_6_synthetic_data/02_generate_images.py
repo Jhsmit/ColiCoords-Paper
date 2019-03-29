@@ -160,10 +160,13 @@ def noise_bf(data_dir):
         img = draw_poisson(img)
         img = add_readout_noise(img, noise)
         tifffile.imsave(os.path.join(data_dir, 'images', 'bf_noise_{}_photons.tif'.format(photons)), img)
-        np.save(os.path.join(data_dir, 'images', 'bf_noise_{}_photons.npy'.format(photons), img))
+        np.save(os.path.join(data_dir, 'images', 'bf_noise_{}_photons.npy'.format(photons)), img)
 
 
 if __name__ == '__main__':
+    np.random.seed(42)
     data_dir = r'.'
+    if not os.path.exists(os.path.join(data_dir, 'images')):
+        os.mkdir(os.path.join(data_dir, 'images'))
     gen_im(data_dir)
     noise_bf(data_dir)
