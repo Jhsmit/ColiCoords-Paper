@@ -23,7 +23,7 @@ with open('CNN_versions.txt', 'w') as f:
     f.write('Tensorflow: ' + tensorflow.__version__ + '\n')
 
 
-for ph in [500]:
+for ph in [10000, 1000, 500]:
     print('{} photons'.format(ph))
     bf = np.load(os.path.join(data_dir, 'images', 'bf_noise_{}_photons.npy'.format(ph)))
     brightfield_resized = resize_stack(bf, 0.5)[:400]
@@ -35,5 +35,5 @@ for ph in [500]:
     model = get_unet_256(input_shape=(256, 256, 1))
     cp = ModelCheckpoint(os.path.join(data_dir, 'wts', 'wts_bf_' + str(ph) + '_photons_{epoch:02d}-{val_loss:.4f}.h5'), monitor='val_loss',
                          save_weights_only=True, verbose=1, mode='min')
-    tb = TensorBoard(log_dir=os.path.join(data_dir, 'logs', 'run_photons_{}'.format(ph))
+    tb = TensorBoard(log_dir=os.path.join(data_dir, 'logs', 'run_photons_{}'.format(ph)))
     model.fit_generator(tsq, steps_per_epoch=len(tsq), epochs=50, validation_data=vsq, callbacks=[cp, tb])

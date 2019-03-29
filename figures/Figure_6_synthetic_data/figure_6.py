@@ -17,8 +17,8 @@ photons = [500, 1000, 10000]
 conditions = ['binary', 'brightfield', 'storm_inner']
 
 labelsize = 7.5
-upscale = 20  # STORM render resolution
-step = 1  # fraction of points plotted in histogram
+upscale = 10  # STORM render resolution
+step = 100  # fraction of points plotted in histogram
 linewidth = 0.5
 
 reload = False
@@ -157,7 +157,7 @@ for i, ph in enumerate(photons):
     ax4.set_anchor('SE')
     ax4.set_title('STORM', fontsize=labelsize)
     cp = CellPlot(pad_cell(cell_dict[ph]['storm_inner'][ci], max_shape))
-    cp.imshow(np.zeros(cp.cell_obj.data.shape), cmap='gray')  # Black background
+    cp.imshow(np.zeros(max_shape), cmap='gray')  # Black background
     cp.plot_storm(data_name='storm_inner', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=ccm)
     cp.plot_storm(data_name='storm_outer', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=mcm)
     cp.plot_outline(ax=ax4, linewidth=linewidth, alpha=alpha, color='w')
@@ -234,5 +234,8 @@ for i, ph in enumerate(photons):
             ax.yaxis.offsetText.set_fontsize(labelsize)
             ax.yaxis.offsetText.set_position((-0.15, 1))
 
+
 output_folder = r'.'
-plt.savefig(os.path.join(output_folder, 'Figure_6a.pdf'), bbox_inches='tight', dpi=1000)
+plt.savefig(os.path.join(output_folder, 'Figure_6.pdf'), bbox_inches='tight', dpi=1000)
+
+plt.savefig(os.path.join(output_folder, 'Figure_6.png'), bbox_inches='tight', dpi=1000)
