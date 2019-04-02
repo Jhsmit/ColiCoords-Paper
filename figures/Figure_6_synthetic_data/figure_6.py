@@ -7,9 +7,9 @@ import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import os
 import seaborn as sns
-
+plt.rcParams['pdf.compression'] = 0
 sns.set_style('ticks')
-
+plt.rcParams['image.composite_image'] = False
 data_dir = r'.'
 if not os.path.exists(os.path.join(data_dir, 'plot_vars')):
     os.mkdir(os.path.join(data_dir, 'plot_vars'))
@@ -17,8 +17,8 @@ photons = [500, 1000, 10000]
 conditions = ['binary', 'brightfield', 'storm_inner']
 
 labelsize = 7.5
-upscale = 10  # STORM render resolution
-step = 100  # fraction of points plotted in histogram
+upscale = 15  # STORM render resolution
+step = 1  # fraction of points plotted in histogram
 linewidth = 0.5
 
 reload = False
@@ -99,18 +99,18 @@ def make_obj_hist(ax, values, step=1):
     ax.axvline(1, color='r', linewidth=linewidth, zorder=-1)
     ax.set_xlim(0, 50)
 
-    #     bbox = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    #     width, height = bbox.width, bbox.height
     axins = inset_axes(ax, width='100%', height='100%', bbox_to_anchor=(0.475, 0.4, 0.5, 0.5),
                        bbox_transform=ax.transAxes, loc=1)
     axins.hist(values[::step], bins=bins_log, color='#333333', linewidth=0)
+    axins.yaxis.OFFSETTEXTPAD = 1
     axins.set_xscale('log')
     axins.axvline(1, color='r', linewidth=linewidth, zorder=-1)
     axins.tick_params(direction='out', labelsize=labelsize, pad=0)
     axins.ticklabel_format(axis='y', style='sci', scilimits=(0, 0), useMathText=True)
     axins.set_xlim(8e-1, 1000)
     axins.yaxis.offsetText.set_fontsize(labelsize)
-    axins.yaxis.offsetText.set_position((-0.15, 0.75))
+
+    return axins
 
 
 fig = plt.figure(figsize=(10, 17.8 / 2.54))
@@ -137,7 +137,7 @@ for i, ph in enumerate(photons):
         fig.text(0.0, p0.y0 + p0.height, 'A', fontsize=15)
 
     linewidth = 0.5
-    alpha = 0.5
+    alpha = 0.75
 
     ax2 = plt.subplot(inner_grid[0, -1])
     ax2.set_anchor('NE')
@@ -157,13 +157,12 @@ for i, ph in enumerate(photons):
     ax4.set_anchor('SE')
     ax4.set_title('STORM', fontsize=labelsize)
     cp = CellPlot(pad_cell(cell_dict[ph]['storm_inner'][ci], max_shape))
-    cp.imshow(np.zeros(max_shape), cmap='gray')  # Black background
-    cp.plot_storm(data_name='storm_inner', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=ccm)
-    cp.plot_storm(data_name='storm_outer', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=mcm)
-    cp.plot_outline(ax=ax4, linewidth=linewidth, alpha=alpha, color='w')
+    cp.imshow(np.zeros(max_shape), cmap='gray', zorder=-2, interpolation='nearest')  # Black background
+    cp.plot_outline(ax=ax4, linewidth=linewidth, alpha=1, color='w', zorder=-1)
+    cp.plot_storm(data_name='storm_inner', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=ccm, interpolation='nearest')
+    cp.plot_storm(data_name='storm_outer', upscale=upscale, method='gauss', alpha_cutoff=0.25, cmap=mcm, interpolation='nearest')
 
     plt.tight_layout(fig)
-
    # plt.subplots_adjust(left=0, right=1, wspace=0)
 
     for ax in [ax1, ax2, ax3, ax4]:
@@ -220,7 +219,7 @@ for i, ph in enumerate(photons):
             obj_vals = np.loadtxt(os.path.join(data_dir, 'obj_values', 'obj_vals_storm_ph_{}_{}.txt'.format(ph, cond)))
             v = obj_vals[:, 0] / obj_vals[:, 1]
 
-            make_obj_hist(ax, v, step=1)
+            axins = make_obj_hist(ax, v, step=1)
 
             if j == 0:
                 ax.set_title('Optimization result', fontsize=labelsize)
@@ -236,6 +235,6 @@ for i, ph in enumerate(photons):
 
 
 output_folder = r'.'
+
 plt.savefig(os.path.join(output_folder, 'Figure_6.pdf'), bbox_inches='tight', dpi=1000)
 
-plt.savefig(os.path.join(output_folder, 'Figure_6.png'), bbox_inches='tight', dpi=1000)
