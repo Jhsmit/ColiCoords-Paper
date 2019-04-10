@@ -118,6 +118,10 @@ ax0.text(28, 27, '$l_c$', fontsize=10)
 ax0.text(47, 25, '$r_c$', fontsize=10)
 ax0.set_ylabel('$y$', rotation=0, labelpad=10)
 ax0.set_title('$x$')
+
+p0 = ax0.get_position()
+fig.text(0.0, 0.95, 'A', fontsize=15)
+
 plt.tight_layout()
 
 #https://stackoverflow.com/questions/33737736/matplotlib-axis-arrow-tip
@@ -158,6 +162,8 @@ gs_axes.append(ax3)
 ax4 = fig.add_subplot(gs[1, 1])
 gs_axes.append(ax4)
 
+p0 = ax1.get_position()
+fig.text(0.0, p0.y0 + p0.height - 0.05, 'B', fontsize=15)
 
 for ax in gs_axes + [ax0]:
     ax.tick_params(axis='x', labelbottom=False)
@@ -193,5 +199,6 @@ gs0.tight_layout(fig, h_pad=0.02, w_pad=0.02, rect=[None, 0.60, None, 0.98])
 for ax in gs_axes + [ax0]:
     ax.set_rasterization_zorder(1)
 
+#plt.show()
 output_folder = r'.'
 plt.savefig(os.path.join(output_folder, 'Figure_2.pdf'), bbox_inches='tight', dpi=1000)
