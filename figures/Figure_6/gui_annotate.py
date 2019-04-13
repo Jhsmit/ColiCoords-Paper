@@ -37,18 +37,18 @@ bf = tifffile.imread(bf_path)
 #bin_path = 'BINARY_PATH'
 #binary = (tifffile.imread(bin_path) > 0).astype(int)
 
+# To annotate only the first 100 images (more images gives better segmentation)
 binary = np.zeros_like(bf[:100])
 
 app = QtGui.QApplication(sys.argv)
 ctrl = GenerateBinaryController(bf[0:100], binary)
-
 
 # Use try/finally to ensure the result if saved even if the GUI crashes.
 try:
     ctrl.show()
     sys.exit(app.exec_())
 finally:
-    tifffile.imsave('binary_img_out_{}_asdf.tif'.format(int(time.time())), ctrl.output_binary)
+    tifffile.imsave('binary_img_out_{}.tif'.format(int(time.time())), ctrl.output_binary)
 
 
 
