@@ -1,4 +1,4 @@
-# ColiCoords: A Python package for analysis of rod-shaped single-cell fluorescence microscopy data in Jupyter notebooks
+# ColiCoords: A Python package for the analysis of bacterial fluorescence microscopy data
 
 In this repository all python code can be found to generate the figures used in the ColiCoords paper. 
 
