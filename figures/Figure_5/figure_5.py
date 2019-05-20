@@ -7,15 +7,21 @@ from pycorrelate import ucorrelate
 from scipy.ndimage.filters import uniform_filter1d
 import os
 import seaborn as sns
+import matplotlib
+
+ff = matplotlib.rcParams['font.family']
+print(ff)
+
+matplotlib.rcParams.update({'font.size': 8})
 
 upscale = 15  # pixels upscale factor for SMLM reconstruction
 
 # 20181204_lacy_sr\20181204_cell_10.hdf5
 cell_storm = load('storm_cell.hdf5')
 
-fig_width = 8.53534 / 2.54
-fig = plt.figure(figsize=(fig_width, 6.739342011413036))
-frac_bot = 0.61
+fig_width = 5.2 # Plos one text width (inches)
+fig = plt.figure(figsize=(fig_width, 3))
+frac_right = 0.45
 
 zx_min = 10
 zx_max = 20
@@ -30,12 +36,12 @@ rl = shape_l[1] / shape_l[0]
 rr = w_r / h_r
 
 top_grid = gridspec.GridSpec(2, 2, width_ratios=[rl, rr])
-top_grid.update(bottom=frac_bot)
+top_grid.update(right=frac_right)
 
 bot_grid = gridspec.GridSpec(3, 1)
-bot_grid.update(top=frac_bot)
+bot_grid.update(left=frac_right)
 
-axes = np.empty((2,2), dtype=object)
+axes = np.empty((2, 2), dtype=object)
 for index, x in np.ndenumerate(axes):
     axes[index] = plt.subplot(top_grid[index])
 
@@ -77,7 +83,7 @@ axes[1, 1].set_ylim(zy_max, zy_min)
 axes[0, 0].set_ylabel("Initial")
 axes[1, 0].set_ylabel("Final")
 
-top_grid.tight_layout(fig, rect=[0.05, frac_bot, 1, 1], h_pad=0, w_pad=0)
+top_grid.tight_layout(fig, rect=[0, 0, frac_right, 1], h_pad=0, w_pad=0)
 
 p0 = axes[0, 0].get_position()
 fig.text(0.0, p0.y0 + p0.height, 'A', fontsize=15)
@@ -145,17 +151,28 @@ ax_fft.set_xlabel('Period (nm)', labelpad=0)
 ax_fft.set_ylabel('Amplitude')
 ax_fft.text(200, 0.65, '$\lambda_{max}$ = ' + str(lambda_max) + ' nm')
 
-bot_grid.tight_layout(fig, rect=[0.05, 0, 1, frac_bot], h_pad=0.5, w_pad=0)
-
-p0 = ax_loc.get_position()
-fig.text(0.0, p0.y0 + p0.height, 'B', fontsize=15)
-
-p0 = acf_axs0.get_position()
-fig.text(0.0, p0.y0 + p0.height, 'C', fontsize=15)
-
-p0 = ax_fft.get_position()
-fig.text(0.0, p0.y0 + p0.height, 'D', fontsize=15)
+#top_grid.tight_layout(fig, rect=[0, 0, frac_right, 1], h_pad=0, w_pad=0)
 fig.align_ylabels([ax_loc, acf_axs0, ax_fft])
 
+bot_grid.tight_layout(fig, rect=[frac_right, 0, 1, 1], h_pad=0.0, w_pad=0)
+
+
+xlbl = ax_loc.xaxis.get_label()
+px, py = xlbl.get_position()
+dx = 0.005*fig_width
+px -= dx
+
+p0 = ax_loc.get_position()
+fig.text(px, p0.y0 + p0.height, 'B', fontsize=15, horizontalalignment='right')
+
+p0 = acf_axs0.get_position()
+fig.text(px, p0.y0 + p0.height, 'C', fontsize=15, horizontalalignment='right')
+
+p0 = ax_fft.get_position()
+fig.text(px, p0.y0 + p0.height, 'D', fontsize=15, horizontalalignment='right')
+
+
+
 output_folder = r'.'
-plt.savefig(os.path.join(output_folder, 'Figure_5.pdf'), bbox_inches='tight', dpi=1000)
+
+plt.savefig(os.path.join(output_folder, 'Figure_5.pdf'), bbox_inches='tight', dpi=600)

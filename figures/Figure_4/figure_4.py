@@ -26,7 +26,7 @@ else:
     cell_bf = load('cell_bf.hdf5')
     cell_flu = load('cell_flu.hdf5')
 
-fig_width = 8.53534 / 2.54
+fig_width = 0.618*5.2 # Plos one text width (inches)
 fig, axes = plt.subplots(3, 3, figsize=(fig_width, fig_width))
 
 for ax in axes.flatten():
@@ -73,7 +73,7 @@ axes[0, 0].set_ylabel('A')
 axes[1, 0].set_ylabel('A')
 axes[2, 0].set_ylabel('A')
 
-plt.tight_layout()
+plt.tight_layout(h_pad=0.1, w_pad=0.1)
 
 axes[0, 0].set_title("Initial")
 axes[0, 1].set_title("Calculated")
@@ -84,5 +84,5 @@ axes[1, 0].set_ylabel('Brightfield')
 axes[2, 0].set_ylabel('Fluorescence')
 
 output_folder = r'.'
-plt.savefig(os.path.join(output_folder, 'Figure_4.pdf'), bbox_inches='tight', dpi=1000)
+plt.savefig(os.path.join(output_folder, 'Figure_4.pdf'), bbox_inches='tight', dpi=600)
 

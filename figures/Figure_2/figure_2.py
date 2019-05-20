@@ -6,6 +6,11 @@ from matplotlib.patches import Arc
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.image import AxesImage
 import os
+import matplotlib
+
+ff = matplotlib.rcParams['font.family']
+print(ff)
+matplotlib.rcParams.update({'font.size': 8})
 
 
 def calc_dx_dy(cell, x):
@@ -25,8 +30,8 @@ c.data.add_data(reconstructed_bf, 'brightfield', 'sim_bf')
 
 
 cp = CellPlot(c)
-fig_width = 8.53534 / 2.54
-fig = plt.figure(figsize=(fig_width, 5.5))
+fig_width = 5.2 # Plos one text width (inches)
+fig = plt.figure(figsize=(fig_width, 2))
 gs0 = GridSpec(1, 1)
 
 ax0 = fig.add_subplot(gs0[0])
@@ -107,9 +112,9 @@ arc = Arc((c.coords.xr, c.coords.p(c.coords.xr)), 5, 5, theta1=th1 - 90, theta2=
 ax0.add_patch(arc)
 
 #Add text labels
-ax0.text(c.coords.xl, 77, '$x_l$', fontsize=14, horizontalalignment='center')
-ax0.text(xc_A, 77, '$x_c$', fontsize=14, horizontalalignment='center')
-ax0.text(c.coords.xr, 77, '$x_r$', fontsize=14, horizontalalignment='center')
+ax0.text(c.coords.xl, 77, '$x_l$', fontsize=10, horizontalalignment='center')
+ax0.text(xc_A, 77, '$x_c$', fontsize=10, horizontalalignment='center')
+ax0.text(c.coords.xr, 77, '$x_r$', fontsize=10, horizontalalignment='center')
 
 ax0.text(xp_A - 15, yp_A - 4, '$A (x_p, y_p)$', fontsize=10)
 ax0.text(xp_B - 17, yp_B + 7, '$B (x_p, y_p)$', fontsize=10)
@@ -122,7 +127,7 @@ ax0.set_title('$x$')
 p0 = ax0.get_position()
 fig.text(0.0, 0.95, 'A', fontsize=15)
 
-plt.tight_layout()
+#plt.tight_layout()
 
 #https://stackoverflow.com/questions/33737736/matplotlib-axis-arrow-tip
 xmin, xmax = ax0.get_xlim()
@@ -150,8 +155,9 @@ ax0.arrow(xmin, 0, xmax - xmin, 0., fc='k', ec='k', lw=lw,
 ax0.arrow(0, ymin, 0., (ymax - ymin), fc='k', ec='k', lw=lw, head_width=hw, head_length=hl, overhang=ohg,
           length_includes_head=True, clip_on=False)
 
+
 #Bottom half of the figure
-gs = GridSpec(2, 2, top=0.6)
+gs = GridSpec(2, 2)
 gs_axes = []
 ax1 = fig.add_subplot(gs[0, 0])
 gs_axes.append(ax1)
@@ -161,9 +167,6 @@ ax3 = fig.add_subplot(gs[1, 0])
 gs_axes.append(ax3)
 ax4 = fig.add_subplot(gs[1, 1])
 gs_axes.append(ax4)
-
-p0 = ax1.get_position()
-fig.text(0.0, p0.y0 + p0.height - 0.05, 'B', fontsize=15)
 
 for ax in gs_axes + [ax0]:
     ax.tick_params(axis='x', labelbottom=False)
@@ -192,13 +195,18 @@ ticks_list = [[20, 40], [0, 20, 40], [0, 10, 20, 30, 40], [0, 60, 120, 180]]
 for ax, t in zip(gs_axes, ticks_list):
     make_cbar(ax, t)
 
-gs.tight_layout(fig, h_pad=0.02, w_pad=0.02, rect=[None, None, None, 0.60])
-gs0.tight_layout(fig, h_pad=0.02, w_pad=0.02, rect=[None, 0.60, None, 0.98])
+frac = 0.421
+gs0.tight_layout(fig, pad=0, h_pad=0.02, w_pad=0.02, rect=[None, None, frac, None]) #(left, bottom, right, top)
+gs.tight_layout(fig, pad=0, h_pad=0.02, w_pad=0.02, rect=[frac, None, None, None])
+#gs.update(wspace=0.002, hspace=0.002)
 
+p0 = ax1.get_position()
+fig.text(p0.x0, 0.95, 'B', fontsize=15)
 
 for ax in gs_axes + [ax0]:
     ax.set_rasterization_zorder(1)
 
+
 #plt.show()
 output_folder = r'.'
-plt.savefig(os.path.join(output_folder, 'Figure_2.pdf'), bbox_inches='tight', dpi=1000)
+plt.savefig(os.path.join(output_folder, 'Figure_2.pdf'), bbox_inches='tight', dpi=600)
